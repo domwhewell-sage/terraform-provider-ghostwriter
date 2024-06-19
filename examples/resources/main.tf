@@ -21,5 +21,5 @@ resource "ghostwriter_domain" "example" {
 }
 
 output "example_domain" {
-  value = ghostwriter_domain.edu
+  value = ghostwriter_domain.example
 }

@@ -211,7 +211,10 @@ func (r *domainResource) Read(ctx context.Context, req resource.ReadRequest, res
 func (r *domainResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Retrieve values from plan
 	var plan domainResourceModel
+	var state domainResourceModel
 	diags := req.Plan.Get(ctx, &plan)
+	stateDiags := req.State.Get(ctx, &state)
+	resp.Diagnostics.Append(stateDiags...)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -226,7 +229,7 @@ func (r *domainResource) Update(ctx context.Context, req resource.UpdateRequest,
 		}
 	}`
 	request := graphql.NewRequest(updatedomain)
-	request.Var("id", plan.ID.ValueInt64())
+	request.Var("id", state.ID.ValueInt64())
 	request.Var("burned_explanation", plan.BurnedExplanation.ValueString())
 	request.Var("autoRenew", plan.AutoRenew.ValueBool())
 	request.Var("name", plan.Name.ValueString())

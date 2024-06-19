@@ -203,5 +203,6 @@ func (p *ghostwriterProvider) DataSources(_ context.Context) []func() datasource
 func (p *ghostwriterProvider) Resources(_ context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
 		NewdomainResource,
+		NewdomainCheckoutResource,
 	}
 }

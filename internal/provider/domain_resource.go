@@ -83,7 +83,7 @@ func (r *domainResource) Schema(_ context.Context, _ resource.SchemaRequest, res
 				Required: true,
 			},
 			"registrar": schema.StringAttribute{
-				Required: true,
+				Optional: true,
 			},
 			"creation": schema.StringAttribute{
 				Required: true,
@@ -92,16 +92,18 @@ func (r *domainResource) Schema(_ context.Context, _ resource.SchemaRequest, res
 				Required: true,
 			},
 			"auto_renew": schema.BoolAttribute{
-				Required: true,
+				Optional: true,
 			},
 			"burned_explanation": schema.StringAttribute{
-				Required: true,
+				Optional: true,
+				Default:  nil,
 			},
 			"note": schema.StringAttribute{
-				Required: true,
+				Optional: true,
 			},
 			"vt_permalink": schema.StringAttribute{
-				Required: true,
+				Optional: true,
+				Default:  nil,
 			},
 		},
 	}

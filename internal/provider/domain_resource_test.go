@@ -1,27 +1,30 @@
-// Copyright (c) HashiCorp, Inc.
-// SPDX-License-Identifier: MPL-2.0
-
 package provider
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
-func TestAccExampleResource(t *testing.T) {
+func TestDomainResource(t *testing.T) {
 	resource.Test(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			// Create and Read testing
 			{
-				Config: testAccExampleResourceConfig("one"),
+				Config: providerConfig + `
+resource "ghostwriter_domain" "test" {
+  name = "test.com"
+  creation = "2024-01-01"
+  expiration = "2025-01-01"
+}
+`,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("ghostwriter_domain.test", "configurable_attribute", "one"),
-					resource.TestCheckResourceAttr("ghostwriter_domain.test", "defaulted", "example value when not configured"),
-					resource.TestCheckResourceAttr("ghostwriter_domain.test", "id", "example-id"),
+					resource.TestCheckResourceAttr("ghostwriter_domain.test", "name", "test.com"),
+					resource.TestCheckResourceAttr("ghostwriter_domain.test", "creation", "2024-01-01"),
+					resource.TestCheckResourceAttr("ghostwriter_domain.test", "expiration", "2025-01-01"),
+					resource.TestCheckResourceAttrSet("ghostwriter_domain.test", "id"),
+					resource.TestCheckResourceAttrSet("ghostwriter_domain.test", "last_updated"),
 				),
 			},
 			// ImportState testing
@@ -29,28 +32,28 @@ func TestAccExampleResource(t *testing.T) {
 				ResourceName:      "ghostwriter_domain.test",
 				ImportState:       true,
 				ImportStateVerify: true,
-				// This is not normally necessary, but is here because this
-				// example code does not have an actual upstream service.
-				// Once the Read method is able to refresh information from
-				// the upstream service, this can be removed.
-				ImportStateVerifyIgnore: []string{"configurable_attribute", "defaulted"},
+				// The last_updated attribute does not exist in the HashiCups
+				// API, therefore there is no value for it during import.
+				ImportStateVerifyIgnore: []string{"last_updated"},
 			},
 			// Update and Read testing
 			{
-				Config: testAccExampleResourceConfig("two"),
+				Config: providerConfig + `
+resource "ghostwriter_domain" "test" {
+  name = "updatedtest.com"
+  creation = "2024-01-01"
+  expiration = "2025-01-01"
+}
+`,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("ghostwriter_domain.test", "configurable_attribute", "two"),
+					resource.TestCheckResourceAttr("ghostwriter_domain.test", "name", "updatedtest.com"),
+					resource.TestCheckResourceAttr("ghostwriter_domain.test", "creation", "2024-01-01"),
+					resource.TestCheckResourceAttr("ghostwriter_domain.test", "expiration", "2025-01-01"),
+					resource.TestCheckResourceAttrSet("ghostwriter_domain.test", "id"),
+					resource.TestCheckResourceAttrSet("ghostwriter_domain.test", "last_updated"),
 				),
 			},
 			// Delete testing automatically occurs in TestCase
 		},
 	})
-}
-
-func testAccExampleResourceConfig(configurableAttribute string) string {
-	return fmt.Sprintf(`
-resource "ghostwriter_domain" "test" {
-  configurable_attribute = %[1]q
-}
-`, configurableAttribute)
 }

@@ -72,38 +72,49 @@ func (r *domainResource) Configure(_ context.Context, req resource.ConfigureRequ
 // Schema defines the schema for the resource.
 func (r *domainResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		Description: "Register a domain in Ghostwriter.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.Int64Attribute{
-				Computed: true,
+				Description: "Placeholder identifier attribute",
+				Computed:    true,
 			},
 			"last_updated": schema.StringAttribute{
-				Computed: true,
+				Description: "Timestamp of the last Terraform update of the domain.",
+				Computed:    true,
 			},
 			"name": schema.StringAttribute{
-				Required: true,
+				Description: "The domain name. e.g. example.com",
+				Required:    true,
 			},
 			"registrar": schema.StringAttribute{
-				Optional: true,
+				Description: "The domain registrar. e.g. GoDaddy, Namecheap, etc.",
+				Optional:    true,
 			},
 			"creation": schema.StringAttribute{
-				Required: true,
+				Description: "The domain creation date. Format: YYYY-MM-DD.",
+				Required:    true,
 			},
 			"expiration": schema.StringAttribute{
-				Required: true,
+				Description: "The domain expiration date. Format: YYYY-MM-DD.",
+				Required:    true,
 			},
 			"auto_renew": schema.BoolAttribute{
-				Optional: true,
+				Description: "Whether the domain is set to auto-renew.",
+				Optional:    true,
 			},
 			"burned_explanation": schema.StringAttribute{
-				Optional: true,
-				Default:  nil,
+				Description: "Explanation of why the domain was burned.",
+				Optional:    true,
+				Default:     nil,
 			},
 			"note": schema.StringAttribute{
-				Optional: true,
+				Description: "Additional notes about the domain.",
+				Optional:    true,
 			},
 			"vt_permalink": schema.StringAttribute{
-				Optional: true,
-				Default:  nil,
+				Description: "The VirusTotal permalink for the domain.",
+				Optional:    true,
+				Default:     nil,
 			},
 		},
 	}

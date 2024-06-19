@@ -55,16 +55,20 @@ func (p *ghostwriterProvider) Metadata(_ context.Context, _ provider.MetadataReq
 // Schema defines the provider-level schema for configuration data.
 func (p *ghostwriterProvider) Schema(_ context.Context, _ provider.SchemaRequest, resp *provider.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		Description: "A provider to create project resources for ghostwriter.",
 		Attributes: map[string]schema.Attribute{
 			"endpoint": schema.StringAttribute{
-				Optional: true,
+				Description: "The graphql endpoint for the ghostwriter API. May also be provided via the GHOSTWRITER_ENDPOINT environment variable.",
+				Required:    true,
 			},
 			"api_key": schema.StringAttribute{
-				Optional:  true,
-				Sensitive: true,
+				Description: "The API key for the ghostwriter API. May also be provided via the GHOSTWRITER_API_KEY environment variable.",
+				Required:    true,
+				Sensitive:   true,
 			},
 			"tls_insecure": schema.BoolAttribute{
-				Optional: true,
+				Description: "Whether to skip TLS verification when connecting to the API endpoint. May also be provided via the GHOSTWRITER_TLS_INSECURE environment variable.",
+				Optional:    true,
 			},
 		},
 	}

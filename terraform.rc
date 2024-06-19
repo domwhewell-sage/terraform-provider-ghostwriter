@@ -1,7 +1,7 @@
 provider_installation {
 
   dev_overrides {
-    "example.com/domwhewell/ghostwriter" = "C:\\Users\\dom.whewell\\go\\bin"
+    "example.com/domwhewell/ghostwriter" = "/home/user/go/bin/"
   }
 
   # For all other providers, install them directly from their origin provider

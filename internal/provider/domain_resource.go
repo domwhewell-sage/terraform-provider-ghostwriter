@@ -95,13 +95,13 @@ func (r *domainResource) Schema(_ context.Context, _ resource.SchemaRequest, res
 				Required: true,
 			},
 			"burned_explanation": schema.StringAttribute{
-				Computed: true,
+				Required: true,
 			},
 			"note": schema.StringAttribute{
-				Computed: true,
+				Required: true,
 			},
 			"vt_permalink": schema.StringAttribute{
-				Computed: true,
+				Required: true,
 			},
 		},
 	}
@@ -117,7 +117,7 @@ func (r *domainResource) Create(ctx context.Context, req resource.CreateRequest,
 	}
 
 	// Generate API request body from plan
-	const insertdomain = `mutation InsertDomain ($burned_explanation: String, $autoRenew: Boolean, $name: String, $registrar: String, $creation: String, $expiration: String, $note: String, $vtPermalink: String) {
+	const insertdomain = `mutation InsertDomain ($burned_explanation: String, $autoRenew: Boolean, $name: String, $registrar: String, $creation: date, $expiration: date, $note: String, $vtPermalink: String) {
 		insert_domain(objects: {burned_explanation: $burned_explanation, autoRenew: $autoRenew, name: $name, registrar: $registrar, creation: $creation, expiration: $expiration, note: $note, vtPermalink: $vtPermalink}) {
 			returning {
 				id
@@ -125,14 +125,14 @@ func (r *domainResource) Create(ctx context.Context, req resource.CreateRequest,
 		}
 	}`
 	request := graphql.NewRequest(insertdomain)
-	request.Var("burned_explanation", plan.BurnedExplanation)
-	request.Var("autoRenew", plan.AutoRenew)
-	request.Var("name", plan.Name)
-	request.Var("registrar", plan.Registrar)
-	request.Var("creation", plan.Creation)
-	request.Var("expiration", plan.Expiration)
-	request.Var("note", plan.Note)
-	request.Var("vtPermalink", plan.VtPermalink)
+	request.Var("burned_explanation", plan.BurnedExplanation.ValueString())
+	request.Var("autoRenew", plan.AutoRenew.ValueBool())
+	request.Var("name", plan.Name.ValueString())
+	request.Var("registrar", plan.Registrar.ValueString())
+	request.Var("creation", plan.Creation.ValueString())
+	request.Var("expiration", plan.Expiration.ValueString())
+	request.Var("note", plan.Note.ValueString())
+	request.Var("vtPermalink", plan.VtPermalink.ValueString())
 	var respData map[string]interface{}
 	if err := r.client.Run(ctx, request, &respData); err != nil {
 		resp.Diagnostics.AddError(
@@ -142,8 +142,8 @@ func (r *domainResource) Create(ctx context.Context, req resource.CreateRequest,
 		return
 	}
 
-	domainID := respData["data"].(map[string]interface{})["insert_domain"].(map[string]interface{})["returning"].([]interface{})[0].(map[string]interface{})
-	plan.ID = types.Int64Value(domainID["id"].(int64))
+	domainID := respData["insert_domain"].(map[string]interface{})["returning"].([]interface{})[0].(map[string]interface{})
+	plan.ID = types.Int64Value(int64(domainID["id"].(float64)))
 	plan.LastUpdated = types.StringValue(time.Now().Format(time.RFC850))
 
 	// Set state to fully populated data
@@ -189,18 +189,15 @@ func (r *domainResource) Read(ctx context.Context, req resource.ReadRequest, res
 	}
 
 	// Overwrite items with refreshed state
-	domainData := respData["data"].(map[string]interface{})["domain"].([]interface{})
-	if len(domainData) > 0 {
-		domain := domainData[0].(map[string]interface{})
-		state.AutoRenew = types.BoolValue(domain["autoRenew"].(bool))
-		state.BurnedExplanation = types.StringValue(domain["burned_explanation"].(string))
-		state.Creation = types.StringValue(domain["creation"].(string))
-		state.Expiration = types.StringValue(domain["expiration"].(string))
-		state.Name = types.StringValue(domain["name"].(string))
-		state.Note = types.StringValue(domain["note"].(string))
-		state.Registrar = types.StringValue(domain["registrar"].(string))
-		state.VtPermalink = types.StringValue(domain["vtPermalink"].(string))
-	}
+	domain := respData["domain"].(map[string]interface{})
+	state.AutoRenew = types.BoolValue(domain["autoRenew"].(bool))
+	state.BurnedExplanation = types.StringValue(domain["burned_explanation"].(string))
+	state.Creation = types.StringValue(domain["creation"].(string))
+	state.Expiration = types.StringValue(domain["expiration"].(string))
+	state.Name = types.StringValue(domain["name"].(string))
+	state.Note = types.StringValue(domain["note"].(string))
+	state.Registrar = types.StringValue(domain["registrar"].(string))
+	state.VtPermalink = types.StringValue(domain["vtPermalink"].(string))
 
 	// Set refreshed state
 	diags = resp.State.Set(ctx, &state)
@@ -221,7 +218,7 @@ func (r *domainResource) Update(ctx context.Context, req resource.UpdateRequest,
 	}
 
 	// Generate API request body from plan
-	const updatedomain = `mutation UpdateDomain ($id: bigint, $burned_explanation: String, $autoRenew: Boolean, $name: String, $registrar: String, $creation: String, $expiration: String, $note: String, $vtPermalink: String) {
+	const updatedomain = `mutation UpdateDomain ($id: bigint, $burned_explanation: String, $autoRenew: Boolean, $name: String, $registrar: String, $creation: date, $expiration: date, $note: String, $vtPermalink: String) {
 		update_domain(where: {id: {_eq: $id}}, _set: {burned_explanation: $burned_explanation, autoRenew: $autoRenew, name: $name, registrar: $registrar, creation: $creation, expiration: $expiration, note: $note, vtPermalink: $vtPermalink}) {
 			returning {
 				id
@@ -230,14 +227,14 @@ func (r *domainResource) Update(ctx context.Context, req resource.UpdateRequest,
 	}`
 	request := graphql.NewRequest(updatedomain)
 	request.Var("id", plan.ID.ValueInt64())
-	request.Var("burned_explanation", plan.BurnedExplanation)
-	request.Var("autoRenew", plan.AutoRenew)
-	request.Var("name", plan.Name)
-	request.Var("registrar", plan.Registrar)
-	request.Var("creation", plan.Creation)
-	request.Var("expiration", plan.Expiration)
-	request.Var("note", plan.Note)
-	request.Var("vtPermalink", plan.VtPermalink)
+	request.Var("burned_explanation", plan.BurnedExplanation.ValueString())
+	request.Var("autoRenew", plan.AutoRenew.ValueBool())
+	request.Var("name", plan.Name.ValueString())
+	request.Var("registrar", plan.Registrar.ValueString())
+	request.Var("creation", plan.Creation.ValueString())
+	request.Var("expiration", plan.Expiration.ValueString())
+	request.Var("note", plan.Note.ValueString())
+	request.Var("vtPermalink", plan.VtPermalink.ValueString())
 	var respData map[string]interface{}
 	if err := r.client.Run(ctx, request, &respData); err != nil {
 		resp.Diagnostics.AddError(
@@ -247,8 +244,8 @@ func (r *domainResource) Update(ctx context.Context, req resource.UpdateRequest,
 		return
 	}
 
-	domainID := respData["data"].(map[string]interface{})["update_domain"].(map[string]interface{})["returning"].([]interface{})[0].(map[string]interface{})
-	plan.ID = types.Int64Value(domainID["id"].(int64))
+	domainID := respData["update_domain"].(map[string]interface{})["returning"].([]interface{})[0].(map[string]interface{})
+	plan.ID = types.Int64Value(int64(domainID["id"].(float64)))
 	plan.LastUpdated = types.StringValue(time.Now().Format(time.RFC850))
 
 	// Set state to fully populated data

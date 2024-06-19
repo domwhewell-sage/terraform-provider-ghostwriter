@@ -18,6 +18,8 @@ resource "ghostwriter_domain" "example" {
   expiration = "2025-01-01"
   auto_renew = false
   note = "This is an example domain"
+  burned_explanation = ""
+  vt_permalink = ""
 }
 
 output "example_domain" {

@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -82,16 +83,16 @@ func (r *domainResource) Schema(_ context.Context, _ resource.SchemaRequest, res
 				Required: true,
 			},
 			"registrar": schema.StringAttribute{
-				Computed: true,
+				Required: true,
 			},
 			"creation": schema.StringAttribute{
-				Computed: true,
+				Required: true,
 			},
 			"expiration": schema.StringAttribute{
-				Computed: true,
+				Required: true,
 			},
 			"auto_renew": schema.BoolAttribute{
-				Computed: true,
+				Required: true,
 			},
 			"burned_explanation": schema.StringAttribute{
 				Computed: true,
@@ -181,8 +182,8 @@ func (r *domainResource) Read(ctx context.Context, req resource.ReadRequest, res
 	var respData map[string]interface{}
 	if err := r.client.Run(ctx, request, &respData); err != nil {
 		resp.Diagnostics.AddError(
-			"Error creating domain",
-			"Could not create domain, unexpected error: "+err.Error(),
+			"Error Reading Ghostwriter Domain",
+			"Could not read Ghostwriter domain ID "+strconv.FormatInt(state.ID.ValueInt64(), 10)+": "+err.Error(),
 		)
 		return
 	}
@@ -211,8 +212,79 @@ func (r *domainResource) Read(ctx context.Context, req resource.ReadRequest, res
 
 // Update updates the resource and sets the updated Terraform state on success.
 func (r *domainResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	// Retrieve values from plan
+	var plan domainResourceModel
+	diags := req.Plan.Get(ctx, &plan)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Generate API request body from plan
+	const updatedomain = `mutation UpdateDomain ($id: bigint, $burned_explanation: String, $autoRenew: Boolean, $name: String, $registrar: String, $creation: String, $expiration: String, $note: String, $vtPermalink: String) {
+		update_domain(where: {id: {_eq: $id}}, _set: {burned_explanation: $burned_explanation, autoRenew: $autoRenew, name: $name, registrar: $registrar, creation: $creation, expiration: $expiration, note: $note, vtPermalink: $vtPermalink}) {
+			returning {
+				id
+			}
+		}
+	}`
+	request := graphql.NewRequest(updatedomain)
+	request.Var("id", plan.ID.ValueInt64())
+	request.Var("burned_explanation", plan.BurnedExplanation)
+	request.Var("autoRenew", plan.AutoRenew)
+	request.Var("name", plan.Name)
+	request.Var("registrar", plan.Registrar)
+	request.Var("creation", plan.Creation)
+	request.Var("expiration", plan.Expiration)
+	request.Var("note", plan.Note)
+	request.Var("vtPermalink", plan.VtPermalink)
+	var respData map[string]interface{}
+	if err := r.client.Run(ctx, request, &respData); err != nil {
+		resp.Diagnostics.AddError(
+			"Error Updating Ghostwriter Domain",
+			"Could not update domain ID "+strconv.FormatInt(plan.ID.ValueInt64(), 10)+": "+err.Error(),
+		)
+		return
+	}
+
+	domainID := respData["data"].(map[string]interface{})["update_domain"].(map[string]interface{})["returning"].([]interface{})[0].(map[string]interface{})
+	plan.ID = types.Int64Value(domainID["id"].(int64))
+	plan.LastUpdated = types.StringValue(time.Now().Format(time.RFC850))
+
+	// Set state to fully populated data
+	diags = resp.State.Set(ctx, plan)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 }
 
 // Delete deletes the resource and removes the Terraform state on success.
 func (r *domainResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	// Retrieve values from state
+	var state domainResourceModel
+	diags := req.State.Get(ctx, &state)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Generate API request body from plan
+	const deletedomain = `query DeleteDomain ($id: bigint){
+		delete_domain(where: {id: {_eq: $id}}) {
+			returning {
+				id
+			}
+		}
+	}`
+	request := graphql.NewRequest(deletedomain)
+	request.Var("id", state.ID.ValueInt64())
+	var respData map[string]interface{}
+	if err := r.client.Run(ctx, request, &respData); err != nil {
+		resp.Diagnostics.AddError(
+			"Error Deleting Ghostwriter Domain",
+			"Could not delete domain ID "+strconv.FormatInt(state.ID.ValueInt64(), 10)+": "+err.Error(),
+		)
+		return
+	}
 }

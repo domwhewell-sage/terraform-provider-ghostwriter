@@ -189,7 +189,7 @@ func (r *domainResource) Read(ctx context.Context, req resource.ReadRequest, res
 	}
 
 	// Overwrite items with refreshed state
-	domain := respData["domain"].(map[string]interface{})
+	domain := respData["domain"].([]interface{})[0].(map[string]interface{})
 	state.AutoRenew = types.BoolValue(domain["autoRenew"].(bool))
 	state.BurnedExplanation = types.StringValue(domain["burned_explanation"].(string))
 	state.Creation = types.StringValue(domain["creation"].(string))
@@ -267,7 +267,7 @@ func (r *domainResource) Delete(ctx context.Context, req resource.DeleteRequest,
 	}
 
 	// Generate API request body from plan
-	const deletedomain = `query DeleteDomain ($id: bigint){
+	const deletedomain = `mutation DeleteDomain ($id: bigint){
 		delete_domain(where: {id: {_eq: $id}}) {
 			returning {
 				id

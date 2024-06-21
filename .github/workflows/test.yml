@@ -93,6 +93,25 @@ jobs:
     - name: Get dependencies
       run: |
         go mod download
+    
+    - name: Checkout the ghostwriter application
+      uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      with:
+        repository: GhostManager/Ghostwriter
+        path: ghostwriter
+    
+    - name: Install the ghostwriter application
+      working-directory: ./ghostwriter
+      run: |
+        chmod +x ghostwriter-cli-linux
+        ./ghostwriter-cli-linux install --dev
+    
+    - name: Get the ghostwriter api_key
+      working-directory: ./ghostwriter
+      run: |
+        export GHOSTWRITER_USERNAME="admin"
+        export GHOSTWRITER_PASSWORD=$(./ghostwriter-cli-linux config get ADMIN_PASSWORD | grep ADMIN_PASSWORD | awk '{print $2}')
+        export GHOSTWRITER_API_KEY=$(curl -X POST -H "Content-Type: application/json" -d "{\"query\": \"mutation Login { login(password: \\\"$GHOSTWRITER_PASSWORD\\\", username: \\\"$GHOSTWRITER_USERNAME\\\") { token expires } }\"}" http://localhost:8080/v1/graphql | jq -r .data.login.token)
         
     - name: TF acceptance tests
       timeout-minutes: 10

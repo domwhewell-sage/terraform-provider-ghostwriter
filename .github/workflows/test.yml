@@ -111,7 +111,7 @@ jobs:
       run: |
         export GHOSTWRITER_USERNAME="admin"
         export GHOSTWRITER_PASSWORD=$(./ghostwriter-cli-linux config get ADMIN_PASSWORD | grep ADMIN_PASSWORD | awk '{print $2}')
-        export GHOSTWRITER_API_KEY=$(curl -X POST -H "Content-Type: application/json" -d "{\"query\": \"mutation Login { login(password: \\\"$GHOSTWRITER_PASSWORD\\\", username: \\\"$GHOSTWRITER_USERNAME\\\") { token expires } }\"}" http://localhost:8080/v1/graphql | jq -r .data.login.token)
+        echo GHOSTWRITER_API_KEY=$(curl -X POST -H "Content-Type: application/json" -d "{\"query\": \"mutation Login { login(password: \\\"$GHOSTWRITER_PASSWORD\\\", username: \\\"$GHOSTWRITER_USERNAME\\\") { token expires } }\"}" http://localhost:8080/v1/graphql | jq -r .data.login.token) >> $GITHUB_ENV
         
     - name: TF acceptance tests
       timeout-minutes: 10

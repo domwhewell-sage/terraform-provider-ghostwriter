@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -18,8 +19,9 @@ import (
 
 // Ensure the implementation satisfies the expected interfaces.
 var (
-	_ resource.Resource              = &domainCheckoutResource{}
-	_ resource.ResourceWithConfigure = &domainCheckoutResource{}
+	_ resource.Resource                = &domainCheckoutResource{}
+	_ resource.ResourceWithConfigure   = &domainCheckoutResource{}
+	_ resource.ResourceWithImportState = &domainCheckoutResource{}
 )
 
 // NewdomainCheckoutResource is a helper function to simplify the provider implementation.
@@ -128,6 +130,20 @@ func (r *domainCheckoutResource) Schema(_ context.Context, _ resource.SchemaRequ
 			},
 		},
 	}
+}
+
+// ImportState imports the resource state from Terraform state.
+func (r *domainCheckoutResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	// Retrieve import ID and save to id attribute
+	id, err := strconv.ParseInt(req.ID, 10, 64)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Error Parsing Import ID",
+			"Could not parse import ID: "+err.Error(),
+		)
+		return
+	}
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), id)...)
 }
 
 // Create creates the resource and sets the initial Terraform state.

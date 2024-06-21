@@ -3,12 +3,16 @@ package provider
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strconv"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/machinebox/graphql"
 )
 
@@ -80,23 +84,37 @@ func (r *domainCheckoutResource) Schema(_ context.Context, _ resource.SchemaRequ
 				Description: "Timestamp of the last Terraform update of the domain checkout.",
 				Computed:    true,
 			},
-			"project_id": schema.StringAttribute{
+			"project_id": schema.Int64Attribute{
 				Description: "The unique identifier of the project the domain should be checked out to.",
 				Required:    true,
 			},
-			"domain_id": schema.StringAttribute{
+			"domain_id": schema.Int64Attribute{
 				Description: "The unique identifier of the domain to be checked out.",
 				Required:    true,
 			},
 			"start_date": schema.StringAttribute{
 				Description: "The start date of the project. Format: YYYY-MM-DD.",
 				Required:    true,
+				Validators: []validator.String{
+					stringvalidator.LengthBetween(1, 256),
+					stringvalidator.RegexMatches(
+						regexp.MustCompile(`\d{4}-\d{2}-\d{2}`),
+						"Date must be in the format YYYY-MM-DD. e.g. 2022-01-01",
+					),
+				},
 			},
 			"end_date": schema.StringAttribute{
 				Description: "The end date of the project. Format: YYYY-MM-DD.",
 				Required:    true,
+				Validators: []validator.String{
+					stringvalidator.LengthBetween(1, 256),
+					stringvalidator.RegexMatches(
+						regexp.MustCompile(`\d{4}-\d{2}-\d{2}`),
+						"Date must be in the format YYYY-MM-DD. e.g. 2022-01-01",
+					),
+				},
 			},
-			"activity_type_id": schema.BoolAttribute{
+			"activity_type_id": schema.Int64Attribute{
 				Description: "The unique identifier of the activity type being performed.",
 				Required:    true,
 			},
@@ -104,6 +122,9 @@ func (r *domainCheckoutResource) Schema(_ context.Context, _ resource.SchemaRequ
 				Description: "Project-related notes, such as how the domain will be used/how it worked out.",
 				Optional:    true,
 				Default:     nil,
+				Validators: []validator.String{
+					stringvalidator.LengthBetween(0, 256),
+				},
 			},
 		},
 	}
@@ -119,7 +140,7 @@ func (r *domainCheckoutResource) Create(ctx context.Context, req resource.Create
 	}
 
 	// Generate API request body from plan
-	const checkoutdomain = `mutation checkoutDomain ($activity_type_id: bigint, $domain_id: bigint, $project_id: bigint, $note: String, $start_date: date, $end_date: date) {
+	const checkoutdomain = `mutation checkoutDomain ($activity_type_id: Int!, $domain_id: Int!, $project_id: Int!, $note: String, $start_date: date!, $end_date: date!) {
 		checkoutDomain(activityTypeId: $activity_type_id, domainId: $domain_id, projectId: $project_id, note: $note, startDate: $start_date, endDate: $end_date) {
 			result
 		}
@@ -140,8 +161,27 @@ func (r *domainCheckoutResource) Create(ctx context.Context, req resource.Create
 		return
 	}
 
-	domainID := respData["insert_domain"].(map[string]interface{})["returning"].([]interface{})[0].(map[string]interface{})
-	plan.ID = types.Int64Value(int64(domainID["id"].(float64)))
+	// Run another query to get the ID of the domain checkout
+	const querydomaincheckout = `query QueryDomainCheckout ($id: bigint){
+		domainCheckout(where: {domain: {id: {_eq: $id}}}, order_by: {id: desc}) {
+			id
+		}
+	}`
+	getid_request := graphql.NewRequest(querydomaincheckout)
+	getid_request.Var("id", plan.DomainId.ValueInt64())
+	var getidResp map[string]interface{}
+	if err := r.client.Run(ctx, getid_request, &getidResp); err != nil {
+		resp.Diagnostics.AddError(
+			"Error Reading Ghostwriter Domain Checkouts",
+			"Could not read Ghostwriter domain checkout ID "+strconv.FormatInt(plan.ID.ValueInt64(), 10)+": "+err.Error(),
+		)
+		return
+	}
+
+	tflog.Debug(ctx, fmt.Sprintf("Domain checkout response: %v", respData))
+
+	checkoutID := getidResp["domainCheckout"].([]interface{})[0].(map[string]interface{})
+	plan.ID = types.Int64Value(int64(checkoutID["id"].(float64)))
 	plan.LastUpdated = types.StringValue(time.Now().Format(time.RFC850))
 
 	// Set state to fully populated data
@@ -188,13 +228,13 @@ func (r *domainCheckoutResource) Read(ctx context.Context, req resource.ReadRequ
 	}
 
 	// Overwrite items with refreshed state
-	domain := respData["domain"].([]interface{})[0].(map[string]interface{})
-	state.ActivityTypeId = types.Int64Value(int64(domain["id"].(float64)))
-	state.DomainId = types.Int64Value(int64(domain["id"].(float64)))
-	state.ProjectId = types.Int64Value(int64(domain["id"].(float64)))
-	state.Note = types.StringValue(domain["expiration"].(string))
-	state.StartDate = types.StringValue(domain["name"].(string))
-	state.EndDate = types.StringValue(domain["note"].(string))
+	domaincheckout := respData["domainCheckout"].([]interface{})[0].(map[string]interface{})
+	state.ActivityTypeId = types.Int64Value(int64(domaincheckout["activityType"].(map[string]interface{})["id"].(float64)))
+	state.DomainId = types.Int64Value(int64(domaincheckout["domainId"].(float64)))
+	state.ProjectId = types.Int64Value(int64(domaincheckout["projectId"].(float64)))
+	state.Note = types.StringValue(domaincheckout["note"].(string))
+	state.StartDate = types.StringValue(domaincheckout["startDate"].(string))
+	state.EndDate = types.StringValue(domaincheckout["endDate"].(string))
 
 	// Set refreshed state
 	diags = resp.State.Set(ctx, &state)
@@ -218,7 +258,7 @@ func (r *domainCheckoutResource) Update(ctx context.Context, req resource.Update
 	}
 
 	// Generate API request body from plan
-	const updatedomaincheckout = `mutation UpdateDomainCheckout ($id: bigint, $activity_type_id: bigint, $domain_id: bigint, $project_id: bigint, $note: String, $start_date: date, $end_date: date) {
+	const updatedomaincheckout = `mutation UpdateDomainCheckout ($id: bigint, $activity_type_id: bigint, $domain_id: bigint, $project_id: bigint, $note: String, $start_date: date!, $end_date: date!) {
 		update_domainCheckout(where: {id: {_eq: $id}}, _set: {activityTypeId: $activity_type_id, domainId: $domain_id, endDate: $end_date, note: $note, projectId: $project_id, startDate: $start_date}) {
 			returning {
 				id
@@ -242,8 +282,8 @@ func (r *domainCheckoutResource) Update(ctx context.Context, req resource.Update
 		return
 	}
 
-	domainID := respData["update_domain"].(map[string]interface{})["returning"].([]interface{})[0].(map[string]interface{})
-	plan.ID = types.Int64Value(int64(domainID["id"].(float64)))
+	checkoutID := respData["update_domainCheckout"].(map[string]interface{})["returning"].([]interface{})[0].(map[string]interface{})
+	plan.ID = types.Int64Value(int64(checkoutID["id"].(float64)))
 	plan.LastUpdated = types.StringValue(time.Now().Format(time.RFC850))
 
 	// Set state to fully populated data
@@ -265,15 +305,15 @@ func (r *domainCheckoutResource) Delete(ctx context.Context, req resource.Delete
 	}
 
 	// Generate API request body from plan
-	const deletedomain = `mutation DeleteDomain ($id: bigint){
-		delete_domainCheckout(where: {id: {_eq: $id}}) {
+	const releasedomain = `mutation UpdateDomain ($id: bigint) {
+		update_domain(where: {id: {_eq: $id}}, _set: {domainStatusId: 1}) {
 			returning {
 				id
 			}
 		}
 	}`
-	request := graphql.NewRequest(deletedomain)
-	request.Var("id", state.ID.ValueInt64())
+	request := graphql.NewRequest(releasedomain)
+	request.Var("id", state.DomainId.ValueInt64())
 	var respData map[string]interface{}
 	if err := r.client.Run(ctx, request, &respData); err != nil {
 		resp.Diagnostics.AddError(

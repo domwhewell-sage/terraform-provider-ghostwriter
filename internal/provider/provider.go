@@ -196,7 +196,10 @@ func (p *ghostwriterProvider) Configure(ctx context.Context, req provider.Config
 
 // DataSources defines the data sources implemented in the provider.
 func (p *ghostwriterProvider) DataSources(_ context.Context) []func() datasource.DataSource {
-	return nil
+	return []func() datasource.DataSource{
+		NewactivitytypeDataSource,
+		NewprojectDataSource,
+	}
 }
 
 // Resources defines the resources implemented in the provider.

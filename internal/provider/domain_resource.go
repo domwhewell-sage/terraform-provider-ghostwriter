@@ -3,11 +3,14 @@ package provider
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strconv"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/machinebox/graphql"
 )
@@ -85,18 +88,46 @@ func (r *domainResource) Schema(_ context.Context, _ resource.SchemaRequest, res
 			"name": schema.StringAttribute{
 				Description: "The domain name. e.g. example.com",
 				Required:    true,
+				Validators: []validator.String{
+					stringvalidator.LengthBetween(1, 256),
+					stringvalidator.RegexMatches(
+						regexp.MustCompile(`^([a-zA-Z0-9-]+\.)*[a-zA-Z0-9-]+\.[a-zA-Z]{2,}$`),
+						"Domain name must be a valid domain name. e.g. example.com",
+					),
+				},
 			},
 			"registrar": schema.StringAttribute{
 				Description: "The domain registrar. e.g. GoDaddy, Namecheap, etc.",
 				Optional:    true,
+				Validators: []validator.String{
+					stringvalidator.LengthBetween(0, 255),
+					stringvalidator.RegexMatches(
+						regexp.MustCompile(`^[a-zA-Z0-9-]+$`),
+						"Registrar must be a valid domain name. e.g. GoDaddy",
+					),
+				},
 			},
 			"creation": schema.StringAttribute{
 				Description: "The domain creation date. Format: YYYY-MM-DD.",
 				Required:    true,
+				Validators: []validator.String{
+					stringvalidator.LengthBetween(1, 256),
+					stringvalidator.RegexMatches(
+						regexp.MustCompile(`\d{4}-\d{2}-\d{2}`),
+						"Date must be in the format YYYY-MM-DD. e.g. 2022-01-01",
+					),
+				},
 			},
 			"expiration": schema.StringAttribute{
 				Description: "The domain expiration date. Format: YYYY-MM-DD.",
 				Required:    true,
+				Validators: []validator.String{
+					stringvalidator.LengthBetween(1, 256),
+					stringvalidator.RegexMatches(
+						regexp.MustCompile(`\d{4}-\d{2}-\d{2}`),
+						"Date must be in the format YYYY-MM-DD. e.g. 2022-01-01",
+					),
+				},
 			},
 			"auto_renew": schema.BoolAttribute{
 				Description: "Whether the domain is set to auto-renew.",
@@ -106,15 +137,24 @@ func (r *domainResource) Schema(_ context.Context, _ resource.SchemaRequest, res
 				Description: "Explanation of why the domain was burned.",
 				Optional:    true,
 				Default:     nil,
+				Validators: []validator.String{
+					stringvalidator.LengthBetween(0, 256),
+				},
 			},
 			"note": schema.StringAttribute{
 				Description: "Additional notes about the domain.",
 				Optional:    true,
+				Validators: []validator.String{
+					stringvalidator.LengthBetween(0, 256),
+				},
 			},
 			"vt_permalink": schema.StringAttribute{
 				Description: "The VirusTotal permalink for the domain.",
 				Optional:    true,
 				Default:     nil,
+				Validators: []validator.String{
+					stringvalidator.LengthBetween(0, 256),
+				},
 			},
 		},
 	}

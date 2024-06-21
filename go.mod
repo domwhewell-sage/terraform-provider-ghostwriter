@@ -10,7 +10,10 @@ require (
 	github.com/hashicorp/terraform-plugin-testing v1.8.0
 )
 
-require github.com/pkg/errors v0.9.1 // indirect
+require (
+	github.com/hashicorp/terraform-plugin-framework-validators v0.12.0 // indirect
+	github.com/pkg/errors v0.9.1 // indirect
+)
 
 require (
 	github.com/BurntSushi/toml v1.2.1 // indirect

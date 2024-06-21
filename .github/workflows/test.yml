@@ -116,13 +116,13 @@ jobs:
         echo "No ``Authorization`` header found is expected here."
       
     - name: Get the ghostwriter API key
-      when: steps.gw_health.outcome == 'success'
+      if: steps.gw_health.outcome == 'success'
       working-directory: ./ghostwriter
       run: |
         echo GHOSTWRITER_API_KEY=$(curl -X POST -H "Content-Type: application/json" -d "{\"query\": \"mutation Login { login(password: \\\"$GHOSTWRITER_PASSWORD\\\", username: \\\"$GHOSTWRITER_USERNAME\\\") { token expires } }\"}" http://localhost:8080/v1/graphql | jq -r .data.login.token) >> $GITHUB_ENV
         
     - name: TF acceptance tests
-      when: steps.gw_health.outcome == 'success'
+      if: steps.gw_health.outcome == 'success'
       timeout-minutes: 10
       env:
         TF_ACC: "1"

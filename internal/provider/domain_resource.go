@@ -13,6 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/machinebox/graphql"
 )
 
@@ -44,6 +45,7 @@ type domainResourceModel struct {
 	BurnedExplanation types.String `tfsdk:"burned_explanation"`
 	Note              types.String `tfsdk:"note"`
 	VtPermalink       types.String `tfsdk:"vt_permalink"`
+	ForceDelete       types.Bool   `tfsdk:"force_delete"`
 	LastUpdated       types.String `tfsdk:"last_updated"`
 }
 
@@ -157,6 +159,10 @@ func (r *domainResource) Schema(_ context.Context, _ resource.SchemaRequest, res
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(0, 256),
 				},
+			},
+			"force_delete": schema.BoolAttribute{
+				Description: "If false, the domain will be soft-deleted left to expire by the ghostwriter instance. If true, the domain will be hard-deleted from the ghostwriter instance. Default is false.",
+				Optional:    true,
 			},
 		},
 	}
@@ -338,22 +344,27 @@ func (r *domainResource) Delete(ctx context.Context, req resource.DeleteRequest,
 		return
 	}
 
-	// Generate API request body from plan
-	const deletedomain = `mutation DeleteDomain ($id: bigint){
-		delete_domain(where: {id: {_eq: $id}}) {
-			returning {
-				id
+	if state.ForceDelete.ValueBool() {
+		// Generate API request body from plan
+		const deletedomain = `mutation DeleteDomain ($id: bigint){
+			delete_domain(where: {id: {_eq: $id}}) {
+				returning {
+					id
+				}
 			}
+		}`
+		request := graphql.NewRequest(deletedomain)
+		request.Var("id", state.ID.ValueInt64())
+		var respData map[string]interface{}
+		if err := r.client.Run(ctx, request, &respData); err != nil {
+			resp.Diagnostics.AddError(
+				"Error Deleting Ghostwriter Domain",
+				"Could not delete domain ID "+strconv.FormatInt(state.ID.ValueInt64(), 10)+": "+err.Error(),
+			)
+			return
 		}
-	}`
-	request := graphql.NewRequest(deletedomain)
-	request.Var("id", state.ID.ValueInt64())
-	var respData map[string]interface{}
-	if err := r.client.Run(ctx, request, &respData); err != nil {
-		resp.Diagnostics.AddError(
-			"Error Deleting Ghostwriter Domain",
-			"Could not delete domain ID "+strconv.FormatInt(state.ID.ValueInt64(), 10)+": "+err.Error(),
-		)
+	} else {
+		tflog.Info(ctx, "Cowardly refusing to delete domain. Domain expiration will be managed by ghostwriter. Set force_delete to true to delete domain.")
 		return
 	}
 }

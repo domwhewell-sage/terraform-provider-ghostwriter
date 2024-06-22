@@ -120,7 +120,7 @@ func (p *ghostwriterProvider) Configure(ctx context.Context, req provider.Config
 
 	endpoint := os.Getenv("GHOSTWRITER_ENDPOINT")
 	api_key := os.Getenv("GHOSTWRITER_API_KEY")
-	tls_insecure = os.Getenv("GHOSTWRITER_TLS_INSECURE") == "true"
+	tls_insecure = os.Getenv("GHOSTWRITER_TLS_INSECURE") == "false"
 
 	if !config.Endpoint.IsNull() {
 		endpoint = config.Endpoint.ValueString()

@@ -107,7 +107,7 @@ jobs:
         ./ghostwriter-cli-linux install --dev
         sleep 10
     
-    - name: Check the health of the ghostwriter server
+    - name: Optain the ghostwriter API key
       id: gw_health
       working-directory: ./ghostwriter
       run: |

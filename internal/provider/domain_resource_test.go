@@ -15,23 +15,21 @@ func TestDomainResource(t *testing.T) {
 				Config: providerConfig + `
 resource "ghostwriter_domain" "test" {
   name = "test.com"
-  registrar = "amazon"
   creation = "2024-01-01"
   expiration = "2025-01-01"
-  auto_renew = true
-  note = "test note"
-  burned_explanation = ""
-  vt_permalink = ""
   force_delete = true
 }
 `,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("ghostwriter_domain.test", "name", "test.com"),
-					resource.TestCheckResourceAttr("ghostwriter_domain.test", "registrar", "amazon"),
+					resource.TestCheckResourceAttr("ghostwriter_domain.test", "registrar", ""),
 					resource.TestCheckResourceAttr("ghostwriter_domain.test", "creation", "2024-01-01"),
 					resource.TestCheckResourceAttr("ghostwriter_domain.test", "expiration", "2025-01-01"),
-					resource.TestCheckResourceAttr("ghostwriter_domain.test", "auto_renew", "true"),
-					resource.TestCheckResourceAttr("ghostwriter_domain.test", "note", "test note"),
+					resource.TestCheckResourceAttr("ghostwriter_domain.test", "auto_renew", "false"),
+					resource.TestCheckResourceAttr("ghostwriter_domain.test", "note", ""),
+					resource.TestCheckResourceAttr("ghostwriter_domain.test", "burned_explanation", ""),
+					resource.TestCheckResourceAttr("ghostwriter_domain.test", "vt_permalink", ""),
+					resource.TestCheckResourceAttr("ghostwriter_domain.test", "force_delete", "true"),
 					resource.TestCheckResourceAttrSet("ghostwriter_domain.test", "id"),
 					resource.TestCheckResourceAttrSet("ghostwriter_domain.test", "last_updated"),
 				),
@@ -55,8 +53,6 @@ resource "ghostwriter_domain" "test" {
   expiration = "2025-01-01"
   auto_renew = true
   note = "test note"
-  burned_explanation = ""
-  vt_permalink = ""
   force_delete = true
 }
 `,
@@ -67,6 +63,9 @@ resource "ghostwriter_domain" "test" {
 					resource.TestCheckResourceAttr("ghostwriter_domain.test", "expiration", "2025-01-01"),
 					resource.TestCheckResourceAttr("ghostwriter_domain.test", "auto_renew", "true"),
 					resource.TestCheckResourceAttr("ghostwriter_domain.test", "note", "test note"),
+					resource.TestCheckResourceAttr("ghostwriter_domain.test", "burned_explanation", ""),
+					resource.TestCheckResourceAttr("ghostwriter_domain.test", "vt_permalink", ""),
+					resource.TestCheckResourceAttr("ghostwriter_domain.test", "force_delete", "true"),
 					resource.TestCheckResourceAttrSet("ghostwriter_domain.test", "id"),
 					resource.TestCheckResourceAttrSet("ghostwriter_domain.test", "last_updated"),
 				),

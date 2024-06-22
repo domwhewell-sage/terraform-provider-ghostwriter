@@ -11,6 +11,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
@@ -103,6 +105,8 @@ func (r *domainResource) Schema(_ context.Context, _ resource.SchemaRequest, res
 			"registrar": schema.StringAttribute{
 				Description: "The domain registrar. e.g. GoDaddy, Namecheap, etc.",
 				Optional:    true,
+				Computed:    true,
+				Default:     stringdefault.StaticString(""),
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(0, 255),
 					stringvalidator.RegexMatches(
@@ -136,10 +140,14 @@ func (r *domainResource) Schema(_ context.Context, _ resource.SchemaRequest, res
 			"auto_renew": schema.BoolAttribute{
 				Description: "Whether the domain is set to auto-renew.",
 				Optional:    true,
+				Computed:    true,
+				Default:     booldefault.StaticBool(false),
 			},
 			"burned_explanation": schema.StringAttribute{
 				Description: "Explanation of why the domain was burned.",
 				Optional:    true,
+				Computed:    true,
+				Default:     stringdefault.StaticString(""),
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(0, 256),
 				},
@@ -147,6 +155,8 @@ func (r *domainResource) Schema(_ context.Context, _ resource.SchemaRequest, res
 			"note": schema.StringAttribute{
 				Description: "Additional notes about the domain.",
 				Optional:    true,
+				Computed:    true,
+				Default:     stringdefault.StaticString(""),
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(0, 256),
 				},
@@ -154,6 +164,8 @@ func (r *domainResource) Schema(_ context.Context, _ resource.SchemaRequest, res
 			"vt_permalink": schema.StringAttribute{
 				Description: "The VirusTotal permalink for the domain.",
 				Optional:    true,
+				Computed:    true,
+				Default:     stringdefault.StaticString(""),
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(0, 256),
 				},
@@ -161,6 +173,8 @@ func (r *domainResource) Schema(_ context.Context, _ resource.SchemaRequest, res
 			"force_delete": schema.BoolAttribute{
 				Description: "If false, the domain will be soft-deleted left to expire by the ghostwriter instance. If true, the domain will be hard-deleted from the ghostwriter instance. Default is false.",
 				Optional:    true,
+				Computed:    true,
+				Default:     booldefault.StaticBool(false),
 			},
 		},
 	}

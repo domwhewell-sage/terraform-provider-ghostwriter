@@ -59,11 +59,11 @@ func (p *ghostwriterProvider) Schema(_ context.Context, _ provider.SchemaRequest
 		Attributes: map[string]schema.Attribute{
 			"endpoint": schema.StringAttribute{
 				Description: "The graphql endpoint for the ghostwriter API. May also be provided via the GHOSTWRITER_ENDPOINT environment variable.",
-				Required:    true,
+				Optional:    true,
 			},
 			"api_key": schema.StringAttribute{
 				Description: "The API key for the ghostwriter API. May also be provided via the GHOSTWRITER_API_KEY environment variable.",
-				Required:    true,
+				Optional:    true,
 				Sensitive:   true,
 			},
 			"tls_insecure": schema.BoolAttribute{

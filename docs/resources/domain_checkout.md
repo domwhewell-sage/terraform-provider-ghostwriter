@@ -53,6 +53,7 @@ resource "ghostwriter_domain_checkout" "example" {
 
 ### Optional
 
+- `force_delete` (Boolean) If false, the domain checkout not be deleted but the domain will be released and the record will remain. If true, the domain checkout record will be hard-deleted from the ghostwriter instance. Default is false.
 - `note` (String) Project-related notes, such as how the domain will be used/how it worked out.
 
 ### Read-Only

@@ -59,11 +59,11 @@ func (p *ghostwriterProvider) Schema(_ context.Context, _ provider.SchemaRequest
 		Attributes: map[string]schema.Attribute{
 			"endpoint": schema.StringAttribute{
 				Description: "The graphql endpoint for the ghostwriter API. May also be provided via the GHOSTWRITER_ENDPOINT environment variable.",
-				Required:    true,
+				Optional:    true,
 			},
 			"api_key": schema.StringAttribute{
 				Description: "The API key for the ghostwriter API. May also be provided via the GHOSTWRITER_API_KEY environment variable.",
-				Required:    true,
+				Optional:    true,
 				Sensitive:   true,
 			},
 			"tls_insecure": schema.BoolAttribute{
@@ -120,7 +120,7 @@ func (p *ghostwriterProvider) Configure(ctx context.Context, req provider.Config
 
 	endpoint := os.Getenv("GHOSTWRITER_ENDPOINT")
 	api_key := os.Getenv("GHOSTWRITER_API_KEY")
-	tls_insecure = os.Getenv("GHOSTWRITER_TLS_INSECURE") == "true"
+	tls_insecure = os.Getenv("GHOSTWRITER_TLS_INSECURE") == "false"
 
 	if !config.Endpoint.IsNull() {
 		endpoint = config.Endpoint.ValueString()

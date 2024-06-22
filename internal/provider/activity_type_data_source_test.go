@@ -18,8 +18,8 @@ data "ghostwriter_activity_type" "test" {
 }
 `,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("ghostwriter_domain.test", "name", "Command and Control"),
-					resource.TestCheckResourceAttrSet("ghostwriter_domain.test", "id"),
+					resource.TestCheckResourceAttr("data.ghostwriter_activity_type.test", "name", "Command and Control"),
+					resource.TestCheckResourceAttrSet("data.ghostwriter_activity_type.test", "id"),
 				),
 			},
 		},

@@ -11,8 +11,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/machinebox/graphql"
 )
 
@@ -44,6 +47,7 @@ type domainResourceModel struct {
 	BurnedExplanation types.String `tfsdk:"burned_explanation"`
 	Note              types.String `tfsdk:"note"`
 	VtPermalink       types.String `tfsdk:"vt_permalink"`
+	ForceDelete       types.Bool   `tfsdk:"force_delete"`
 	LastUpdated       types.String `tfsdk:"last_updated"`
 }
 
@@ -101,6 +105,8 @@ func (r *domainResource) Schema(_ context.Context, _ resource.SchemaRequest, res
 			"registrar": schema.StringAttribute{
 				Description: "The domain registrar. e.g. GoDaddy, Namecheap, etc.",
 				Optional:    true,
+				Computed:    true,
+				Default:     stringdefault.StaticString(""),
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(0, 255),
 					stringvalidator.RegexMatches(
@@ -134,11 +140,14 @@ func (r *domainResource) Schema(_ context.Context, _ resource.SchemaRequest, res
 			"auto_renew": schema.BoolAttribute{
 				Description: "Whether the domain is set to auto-renew.",
 				Optional:    true,
+				Computed:    true,
+				Default:     booldefault.StaticBool(false),
 			},
 			"burned_explanation": schema.StringAttribute{
 				Description: "Explanation of why the domain was burned.",
 				Optional:    true,
-				Default:     nil,
+				Computed:    true,
+				Default:     stringdefault.StaticString(""),
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(0, 256),
 				},
@@ -146,6 +155,8 @@ func (r *domainResource) Schema(_ context.Context, _ resource.SchemaRequest, res
 			"note": schema.StringAttribute{
 				Description: "Additional notes about the domain.",
 				Optional:    true,
+				Computed:    true,
+				Default:     stringdefault.StaticString(""),
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(0, 256),
 				},
@@ -153,10 +164,17 @@ func (r *domainResource) Schema(_ context.Context, _ resource.SchemaRequest, res
 			"vt_permalink": schema.StringAttribute{
 				Description: "The VirusTotal permalink for the domain.",
 				Optional:    true,
-				Default:     nil,
+				Computed:    true,
+				Default:     stringdefault.StaticString(""),
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(0, 256),
 				},
+			},
+			"force_delete": schema.BoolAttribute{
+				Description: "If false, the domain will be soft-deleted left to expire by the ghostwriter instance. If true, the domain will be hard-deleted from the ghostwriter instance. Default is false.",
+				Optional:    true,
+				Computed:    true,
+				Default:     booldefault.StaticBool(false),
 			},
 		},
 	}
@@ -165,6 +183,7 @@ func (r *domainResource) Schema(_ context.Context, _ resource.SchemaRequest, res
 // ImportState imports the resource state from Terraform state.
 func (r *domainResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	// Retrieve import ID and save to id attribute
+	tflog.Debug(ctx, fmt.Sprintf("Importing domain resource ID: %s", req.ID))
 	id, err := strconv.ParseInt(req.ID, 10, 64)
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -174,6 +193,8 @@ func (r *domainResource) ImportState(ctx context.Context, req resource.ImportSta
 		return
 	}
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), id)...)
+	force_delete := types.BoolValue(false)
+	resp.Diagnostics.Append(resp.State.GetAttribute(ctx, path.Root("force_delete"), &force_delete)...)
 }
 
 // Create creates the resource and sets the initial Terraform state.
@@ -189,10 +210,19 @@ func (r *domainResource) Create(ctx context.Context, req resource.CreateRequest,
 	const insertdomain = `mutation InsertDomain ($burned_explanation: String, $autoRenew: Boolean, $name: String, $registrar: String, $creation: date, $expiration: date, $note: String, $vtPermalink: String) {
 		insert_domain(objects: {burned_explanation: $burned_explanation, autoRenew: $autoRenew, name: $name, registrar: $registrar, creation: $creation, expiration: $expiration, note: $note, vtPermalink: $vtPermalink}) {
 			returning {
-				id
+				id,
+				burned_explanation,
+				autoRenew,
+				name,
+				registrar,
+				creation,
+				expiration,
+				note,
+				vtPermalink
 			}
 		}
 	}`
+	tflog.Debug(ctx, fmt.Sprintf("Creating domain: %v", plan))
 	request := graphql.NewRequest(insertdomain)
 	request.Var("burned_explanation", plan.BurnedExplanation.ValueString())
 	request.Var("autoRenew", plan.AutoRenew.ValueBool())
@@ -211,12 +241,29 @@ func (r *domainResource) Create(ctx context.Context, req resource.CreateRequest,
 		return
 	}
 
-	domainID := respData["insert_domain"].(map[string]interface{})["returning"].([]interface{})[0].(map[string]interface{})
-	plan.ID = types.Int64Value(int64(domainID["id"].(float64)))
-	plan.LastUpdated = types.StringValue(time.Now().Format(time.RFC850))
+	tflog.Debug(ctx, fmt.Sprintf("Response from Ghostwriter: %v", respData))
+	domains := respData["insert_domain"].(map[string]interface{})["returning"].([]interface{})
+	if len(domains) == 1 {
+		domain := domains[0].(map[string]interface{})
+		plan.ID = types.Int64Value(int64(domain["id"].(float64)))
+		plan.AutoRenew = types.BoolValue(domain["autoRenew"].(bool))
+		plan.BurnedExplanation = types.StringValue(domain["burned_explanation"].(string))
+		plan.Creation = types.StringValue(domain["creation"].(string))
+		plan.Expiration = types.StringValue(domain["expiration"].(string))
+		plan.Name = types.StringValue(domain["name"].(string))
+		plan.Note = types.StringValue(domain["note"].(string))
+		plan.Registrar = types.StringValue(domain["registrar"].(string))
+		plan.LastUpdated = types.StringValue(time.Now().Format(time.RFC850))
 
-	// Set state to fully populated data
-	diags = resp.State.Set(ctx, plan)
+		// Set state to fully populated data
+		diags = resp.State.Set(ctx, plan)
+	} else {
+		resp.Diagnostics.AddError(
+			"Error creating domain",
+			"Could not create domain: Domain not found",
+		)
+	}
+
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -236,6 +283,7 @@ func (r *domainResource) Read(ctx context.Context, req resource.ReadRequest, res
 	// Generate API request body from plan
 	const querydomain = `query QueryDomain ($id: bigint){
 		domain(where: {id: {_eq: $id}}) {
+			id,
 			burned_explanation,
 			autoRenew,
 			name,
@@ -246,6 +294,7 @@ func (r *domainResource) Read(ctx context.Context, req resource.ReadRequest, res
 			vtPermalink
 		}
 	}`
+	tflog.Debug(ctx, fmt.Sprintf("Reading domain: %v", state.ID))
 	request := graphql.NewRequest(querydomain)
 	request.Var("id", state.ID.ValueInt64())
 	var respData map[string]interface{}
@@ -258,18 +307,29 @@ func (r *domainResource) Read(ctx context.Context, req resource.ReadRequest, res
 	}
 
 	// Overwrite items with refreshed state
-	domain := respData["domain"].([]interface{})[0].(map[string]interface{})
-	state.AutoRenew = types.BoolValue(domain["autoRenew"].(bool))
-	state.BurnedExplanation = types.StringValue(domain["burned_explanation"].(string))
-	state.Creation = types.StringValue(domain["creation"].(string))
-	state.Expiration = types.StringValue(domain["expiration"].(string))
-	state.Name = types.StringValue(domain["name"].(string))
-	state.Note = types.StringValue(domain["note"].(string))
-	state.Registrar = types.StringValue(domain["registrar"].(string))
-	state.VtPermalink = types.StringValue(domain["vtPermalink"].(string))
+	tflog.Debug(ctx, fmt.Sprintf("Response from Ghostwriter: %v", respData))
+	domains := respData["domain"].([]interface{})
+	if len(domains) == 1 {
+		domain := domains[0].(map[string]interface{})
+		state.ID = types.Int64Value(int64(domain["id"].(float64)))
+		state.AutoRenew = types.BoolValue(domain["autoRenew"].(bool))
+		state.BurnedExplanation = types.StringValue(domain["burned_explanation"].(string))
+		state.Creation = types.StringValue(domain["creation"].(string))
+		state.Expiration = types.StringValue(domain["expiration"].(string))
+		state.Name = types.StringValue(domain["name"].(string))
+		state.Note = types.StringValue(domain["note"].(string))
+		state.Registrar = types.StringValue(domain["registrar"].(string))
+		state.VtPermalink = types.StringValue(domain["vtPermalink"].(string))
 
-	// Set refreshed state
-	diags = resp.State.Set(ctx, &state)
+		// Set refreshed state
+		diags = resp.State.Set(ctx, &state)
+	} else {
+		resp.Diagnostics.AddError(
+			"Error Reading Ghostwriter Domain",
+			"Could not read Ghostwriter domain ID "+strconv.FormatInt(state.ID.ValueInt64(), 10)+": Domain not found",
+		)
+	}
+
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -293,10 +353,19 @@ func (r *domainResource) Update(ctx context.Context, req resource.UpdateRequest,
 	const updatedomain = `mutation UpdateDomain ($id: bigint, $burned_explanation: String, $autoRenew: Boolean, $name: String, $registrar: String, $creation: date, $expiration: date, $note: String, $vtPermalink: String) {
 		update_domain(where: {id: {_eq: $id}}, _set: {burned_explanation: $burned_explanation, autoRenew: $autoRenew, name: $name, registrar: $registrar, creation: $creation, expiration: $expiration, note: $note, vtPermalink: $vtPermalink}) {
 			returning {
-				id
+				id,
+				burned_explanation,
+				autoRenew,
+				name,
+				registrar,
+				creation,
+				expiration,
+				note,
+				vtPermalink
 			}
 		}
 	}`
+	tflog.Debug(ctx, fmt.Sprintf("Updating domain: %v", plan))
 	request := graphql.NewRequest(updatedomain)
 	request.Var("id", state.ID.ValueInt64())
 	request.Var("burned_explanation", plan.BurnedExplanation.ValueString())
@@ -316,12 +385,29 @@ func (r *domainResource) Update(ctx context.Context, req resource.UpdateRequest,
 		return
 	}
 
-	domainID := respData["update_domain"].(map[string]interface{})["returning"].([]interface{})[0].(map[string]interface{})
-	plan.ID = types.Int64Value(int64(domainID["id"].(float64)))
-	plan.LastUpdated = types.StringValue(time.Now().Format(time.RFC850))
+	tflog.Debug(ctx, fmt.Sprintf("Response from Ghostwriter: %v", respData))
+	updated_domains := respData["update_domain"].(map[string]interface{})["returning"].([]interface{})
+	if len(updated_domains) == 1 {
+		domainID := updated_domains[0].(map[string]interface{})
+		plan.ID = types.Int64Value(int64(domainID["id"].(float64)))
+		plan.AutoRenew = types.BoolValue(domainID["autoRenew"].(bool))
+		plan.BurnedExplanation = types.StringValue(domainID["burned_explanation"].(string))
+		plan.Creation = types.StringValue(domainID["creation"].(string))
+		plan.Expiration = types.StringValue(domainID["expiration"].(string))
+		plan.Name = types.StringValue(domainID["name"].(string))
+		plan.Note = types.StringValue(domainID["note"].(string))
+		plan.Registrar = types.StringValue(domainID["registrar"].(string))
+		plan.LastUpdated = types.StringValue(time.Now().Format(time.RFC850))
 
-	// Set state to fully populated data
-	diags = resp.State.Set(ctx, plan)
+		// Set state to fully populated data
+		diags = resp.State.Set(ctx, plan)
+	} else {
+		resp.Diagnostics.AddError(
+			"Error Updating Ghostwriter Domain",
+			"Could not update domain ID "+strconv.FormatInt(plan.ID.ValueInt64(), 10)+": Domain not found",
+		)
+	}
+
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -338,22 +424,27 @@ func (r *domainResource) Delete(ctx context.Context, req resource.DeleteRequest,
 		return
 	}
 
-	// Generate API request body from plan
-	const deletedomain = `mutation DeleteDomain ($id: bigint){
-		delete_domain(where: {id: {_eq: $id}}) {
-			returning {
-				id
+	if state.ForceDelete.ValueBool() {
+		// Generate API request body from plan
+		const deletedomain = `mutation DeleteDomain ($id: bigint){
+			delete_domain(where: {id: {_eq: $id}}) {
+				returning {
+					id
+				}
 			}
+		}`
+		request := graphql.NewRequest(deletedomain)
+		request.Var("id", state.ID.ValueInt64())
+		var respData map[string]interface{}
+		if err := r.client.Run(ctx, request, &respData); err != nil {
+			resp.Diagnostics.AddError(
+				"Error Deleting Ghostwriter Domain",
+				"Could not delete domain ID "+strconv.FormatInt(state.ID.ValueInt64(), 10)+": "+err.Error(),
+			)
+			return
 		}
-	}`
-	request := graphql.NewRequest(deletedomain)
-	request.Var("id", state.ID.ValueInt64())
-	var respData map[string]interface{}
-	if err := r.client.Run(ctx, request, &respData); err != nil {
-		resp.Diagnostics.AddError(
-			"Error Deleting Ghostwriter Domain",
-			"Could not delete domain ID "+strconv.FormatInt(state.ID.ValueInt64(), 10)+": "+err.Error(),
-		)
+	} else {
+		tflog.Info(ctx, "Cowardly refusing to delete domain. Domain expiration will be managed by ghostwriter. Set force_delete to true to delete domain.")
 		return
 	}
 }

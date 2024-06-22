@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/machinebox/graphql"
 )
 
@@ -95,6 +96,7 @@ func (d *activitytypeDataSource) Read(ctx context.Context, req datasource.ReadRe
 			activity
 		}
 	}`
+	tflog.Debug(ctx, fmt.Sprintf("Querying activity types: %v", plan))
 	request := graphql.NewRequest(queryActivityType)
 	request.Var("name", plan.Name.ValueString())
 	var respData map[string]interface{}
@@ -106,6 +108,7 @@ func (d *activitytypeDataSource) Read(ctx context.Context, req datasource.ReadRe
 		return
 	}
 
+	tflog.Debug(ctx, fmt.Sprintf("Response from Ghostwriter: %v", respData))
 	// Overwrite items with refreshed state
 	activityTypes := respData["activityType"].([]interface{})
 	if len(activityTypes) == 1 {

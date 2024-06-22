@@ -11,6 +11,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
@@ -43,6 +45,7 @@ type domainCheckoutResourceModel struct {
 	Note           types.String `tfsdk:"note"`
 	StartDate      types.String `tfsdk:"start_date"`
 	EndDate        types.String `tfsdk:"end_date"`
+	ForceDelete    types.Bool   `tfsdk:"force_delete"`
 	LastUpdated    types.String `tfsdk:"last_updated"`
 }
 
@@ -123,10 +126,17 @@ func (r *domainCheckoutResource) Schema(_ context.Context, _ resource.SchemaRequ
 			"note": schema.StringAttribute{
 				Description: "Project-related notes, such as how the domain will be used/how it worked out.",
 				Optional:    true,
-				Default:     nil,
+				Computed:    true,
+				Default:     stringdefault.StaticString(""),
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(0, 256),
 				},
+			},
+			"force_delete": schema.BoolAttribute{
+				Description: "If false, the domain checkout not be deleted but the domain will be released and the record will remain. If true, the domain checkout record will be hard-deleted from the ghostwriter instance. Default is false.",
+				Optional:    true,
+				Computed:    true,
+				Default:     booldefault.StaticBool(false),
 			},
 		},
 	}
@@ -135,6 +145,7 @@ func (r *domainCheckoutResource) Schema(_ context.Context, _ resource.SchemaRequ
 // ImportState imports the resource state from Terraform state.
 func (r *domainCheckoutResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	// Retrieve import ID and save to id attribute
+	tflog.Debug(ctx, fmt.Sprintf("Importing domain resource ID: %s", req.ID))
 	id, err := strconv.ParseInt(req.ID, 10, 64)
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -144,6 +155,8 @@ func (r *domainCheckoutResource) ImportState(ctx context.Context, req resource.I
 		return
 	}
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), id)...)
+	force_delete := types.BoolValue(false)
+	resp.Diagnostics.Append(resp.State.GetAttribute(ctx, path.Root("force_delete"), &force_delete)...)
 }
 
 // Create creates the resource and sets the initial Terraform state.
@@ -161,6 +174,7 @@ func (r *domainCheckoutResource) Create(ctx context.Context, req resource.Create
 			result
 		}
 	}`
+	tflog.Debug(ctx, fmt.Sprintf("Checking out domain: %v", plan))
 	request := graphql.NewRequest(checkoutdomain)
 	request.Var("activity_type_id", plan.ActivityTypeId.ValueInt64())
 	request.Var("domain_id", plan.DomainId.ValueInt64())
@@ -177,12 +191,23 @@ func (r *domainCheckoutResource) Create(ctx context.Context, req resource.Create
 		return
 	}
 
+	tflog.Debug(ctx, fmt.Sprintf("Response from Ghostwriter: %v", respData))
+
 	// Run another query to get the ID of the domain checkout
 	const querydomaincheckout = `query QueryDomainCheckout ($id: bigint){
 		domainCheckout(where: {domain: {id: {_eq: $id}}}, order_by: {id: desc}) {
 			id
+			domainId
+			endDate
+			note
+			projectId
+			startDate
+			activityType {
+			  id
+			}
 		}
 	}`
+	tflog.Debug(ctx, fmt.Sprintf("Query domain checkout ID: %v", plan.DomainId.ValueInt64()))
 	getid_request := graphql.NewRequest(querydomaincheckout)
 	getid_request.Var("id", plan.DomainId.ValueInt64())
 	var getidResp map[string]interface{}
@@ -196,12 +221,26 @@ func (r *domainCheckoutResource) Create(ctx context.Context, req resource.Create
 
 	tflog.Debug(ctx, fmt.Sprintf("Domain checkout response: %v", respData))
 
-	checkoutID := getidResp["domainCheckout"].([]interface{})[0].(map[string]interface{})
-	plan.ID = types.Int64Value(int64(checkoutID["id"].(float64)))
-	plan.LastUpdated = types.StringValue(time.Now().Format(time.RFC850))
+	domain_checkouts := getidResp["domainCheckout"].([]interface{})
+	if len(domain_checkouts) >= 1 {
+		latest_checkout := domain_checkouts[0].(map[string]interface{})
+		plan.ID = types.Int64Value(int64(latest_checkout["id"].(float64)))
+		plan.ActivityTypeId = types.Int64Value(int64(latest_checkout["activityType"].(map[string]interface{})["id"].(float64)))
+		plan.DomainId = types.Int64Value(int64(latest_checkout["domainId"].(float64)))
+		plan.ProjectId = types.Int64Value(int64(latest_checkout["projectId"].(float64)))
+		plan.Note = types.StringValue(latest_checkout["note"].(string))
+		plan.StartDate = types.StringValue(latest_checkout["startDate"].(string))
+		plan.EndDate = types.StringValue(latest_checkout["endDate"].(string))
+		plan.LastUpdated = types.StringValue(time.Now().Format(time.RFC850))
 
-	// Set state to fully populated data
-	diags = resp.State.Set(ctx, plan)
+		// Set state to fully populated data
+		diags = resp.State.Set(ctx, plan)
+	} else {
+		resp.Diagnostics.AddError(
+			"Error Reading Ghostwriter Domain Checkouts",
+			"Could not obtain any checkouts for the domain ID "+strconv.FormatInt(plan.DomainId.ValueInt64(), 10),
+		)
+	}
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -232,6 +271,7 @@ func (r *domainCheckoutResource) Read(ctx context.Context, req resource.ReadRequ
 			}
 		}
 	}`
+	tflog.Debug(ctx, fmt.Sprintf("Query domain checkout ID: %v", state.ID.ValueInt64()))
 	request := graphql.NewRequest(querydomaincheckout)
 	request.Var("id", state.ID.ValueInt64())
 	var respData map[string]interface{}
@@ -243,17 +283,28 @@ func (r *domainCheckoutResource) Read(ctx context.Context, req resource.ReadRequ
 		return
 	}
 
-	// Overwrite items with refreshed state
-	domaincheckout := respData["domainCheckout"].([]interface{})[0].(map[string]interface{})
-	state.ActivityTypeId = types.Int64Value(int64(domaincheckout["activityType"].(map[string]interface{})["id"].(float64)))
-	state.DomainId = types.Int64Value(int64(domaincheckout["domainId"].(float64)))
-	state.ProjectId = types.Int64Value(int64(domaincheckout["projectId"].(float64)))
-	state.Note = types.StringValue(domaincheckout["note"].(string))
-	state.StartDate = types.StringValue(domaincheckout["startDate"].(string))
-	state.EndDate = types.StringValue(domaincheckout["endDate"].(string))
+	tflog.Debug(ctx, fmt.Sprintf("Domain checkout response: %v", respData))
 
-	// Set refreshed state
-	diags = resp.State.Set(ctx, &state)
+	// Overwrite items with refreshed state
+	domain_checkouts := respData["domainCheckout"].([]interface{})
+	if len(domain_checkouts) >= 1 {
+		latest_checkout := domain_checkouts[0].(map[string]interface{})
+		state.ActivityTypeId = types.Int64Value(int64(latest_checkout["activityType"].(map[string]interface{})["id"].(float64)))
+		state.DomainId = types.Int64Value(int64(latest_checkout["domainId"].(float64)))
+		state.ProjectId = types.Int64Value(int64(latest_checkout["projectId"].(float64)))
+		state.Note = types.StringValue(latest_checkout["note"].(string))
+		state.StartDate = types.StringValue(latest_checkout["startDate"].(string))
+		state.EndDate = types.StringValue(latest_checkout["endDate"].(string))
+
+		// Set refreshed state
+		diags = resp.State.Set(ctx, &state)
+	} else {
+		resp.Diagnostics.AddError(
+			"Error Reading Ghostwriter Domain Checkouts",
+			"Could not obtain any checkouts for the domain ID "+strconv.FormatInt(state.DomainId.ValueInt64(), 10),
+		)
+	}
+
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -278,9 +329,18 @@ func (r *domainCheckoutResource) Update(ctx context.Context, req resource.Update
 		update_domainCheckout(where: {id: {_eq: $id}}, _set: {activityTypeId: $activity_type_id, domainId: $domain_id, endDate: $end_date, note: $note, projectId: $project_id, startDate: $start_date}) {
 			returning {
 				id
+				domainId
+				endDate
+				note
+				projectId
+				startDate
+				activityType {
+				  id
+				}
 			}
 		}
 	}`
+	tflog.Debug(ctx, fmt.Sprintf("Updating domain checkout: %v", plan))
 	request := graphql.NewRequest(updatedomaincheckout)
 	request.Var("id", state.ID.ValueInt64())
 	request.Var("activity_type_id", plan.ActivityTypeId.ValueInt64())
@@ -298,12 +358,29 @@ func (r *domainCheckoutResource) Update(ctx context.Context, req resource.Update
 		return
 	}
 
-	checkoutID := respData["update_domainCheckout"].(map[string]interface{})["returning"].([]interface{})[0].(map[string]interface{})
-	plan.ID = types.Int64Value(int64(checkoutID["id"].(float64)))
-	plan.LastUpdated = types.StringValue(time.Now().Format(time.RFC850))
+	tflog.Debug(ctx, fmt.Sprintf("Response from Ghostwriter: %v", respData))
 
-	// Set state to fully populated data
-	diags = resp.State.Set(ctx, plan)
+	updated_domain_checkouts := respData["update_domainCheckout"].(map[string]interface{})["returning"].([]interface{})
+	if len(updated_domain_checkouts) == 1 {
+		updated_domain_checkout := updated_domain_checkouts[0].(map[string]interface{})
+		plan.ID = types.Int64Value(int64(updated_domain_checkout["id"].(float64)))
+		plan.ActivityTypeId = types.Int64Value(int64(updated_domain_checkout["activityType"].(map[string]interface{})["id"].(float64)))
+		plan.DomainId = types.Int64Value(int64(updated_domain_checkout["domainId"].(float64)))
+		plan.ProjectId = types.Int64Value(int64(updated_domain_checkout["projectId"].(float64)))
+		plan.Note = types.StringValue(updated_domain_checkout["note"].(string))
+		plan.StartDate = types.StringValue(updated_domain_checkout["startDate"].(string))
+		plan.EndDate = types.StringValue(updated_domain_checkout["endDate"].(string))
+		plan.LastUpdated = types.StringValue(time.Now().Format(time.RFC850))
+
+		// Set state to fully populated data
+		diags = resp.State.Set(ctx, plan)
+	} else {
+		resp.Diagnostics.AddError(
+			"Error Updating Ghostwriter Domain Checkout",
+			"Could not update domain checkout ID "+strconv.FormatInt(plan.ID.ValueInt64(), 10),
+		)
+	}
+
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -320,22 +397,46 @@ func (r *domainCheckoutResource) Delete(ctx context.Context, req resource.Delete
 		return
 	}
 
-	// Generate API request body from plan
-	const releasedomain = `mutation UpdateDomain ($id: bigint) {
-		update_domain(where: {id: {_eq: $id}}, _set: {domainStatusId: 1}) {
-			returning {
-				id
+	if state.ForceDelete.ValueBool() {
+		// Generate API request body from plan
+		const deletedomaincheckout = `mutation DeleteDomainCheckout ($id: bigint) {
+			delete_domainCheckout(where: {id: {_eq: $id}}) {
+				returning {
+					id
+				}
 			}
+		}`
+		tflog.Debug(ctx, fmt.Sprintf("Deleting domain checkout: %v", state))
+		request := graphql.NewRequest(deletedomaincheckout)
+		request.Var("id", state.ID.ValueInt64())
+		var respData map[string]interface{}
+		if err := r.client.Run(ctx, request, &respData); err != nil {
+			resp.Diagnostics.AddError(
+				"Error Deleting Ghostwriter Domain Checkout",
+				"Could not delete domain checkout ID "+strconv.FormatInt(state.ID.ValueInt64(), 10)+": "+err.Error(),
+			)
+			return
 		}
-	}`
-	request := graphql.NewRequest(releasedomain)
-	request.Var("id", state.DomainId.ValueInt64())
-	var respData map[string]interface{}
-	if err := r.client.Run(ctx, request, &respData); err != nil {
-		resp.Diagnostics.AddError(
-			"Error Deleting Ghostwriter Domain Checkout",
-			"Could not delete domain checkout ID "+strconv.FormatInt(state.ID.ValueInt64(), 10)+": "+err.Error(),
-		)
-		return
+	} else {
+		tflog.Info(ctx, "Cowardly refusing to delete domain checkout. Releasing domain to the ghostwriter pool and the domain checkout record will remain. Set force_delete to true to delete domain checkout record.")
+		// Generate API request body from plan
+		const releasedomain = `mutation UpdateDomain ($id: bigint) {
+			update_domain(where: {id: {_eq: $id}}, _set: {domainStatusId: 1}) {
+				returning {
+					id
+				}
+			}
+		}`
+		tflog.Debug(ctx, fmt.Sprintf("Releasing domain to the pool: %v", state))
+		request := graphql.NewRequest(releasedomain)
+		request.Var("id", state.DomainId.ValueInt64())
+		var respData map[string]interface{}
+		if err := r.client.Run(ctx, request, &respData); err != nil {
+			resp.Diagnostics.AddError(
+				"Error Deleting Ghostwriter Domain Checkout",
+				"Could not delete domain checkout ID "+strconv.FormatInt(state.ID.ValueInt64(), 10)+": "+err.Error(),
+			)
+			return
+		}
 	}
 }

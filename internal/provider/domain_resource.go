@@ -206,22 +206,6 @@ func (r *domainResource) Create(ctx context.Context, req resource.CreateRequest,
 		return
 	}
 
-	// if plan.Registrar.IsNull() {
-	// 	plan.BurnedExplanation = types.StringValue("")
-	// }
-	// if plan.AutoRenew.IsNull() {
-	// 	plan.AutoRenew = types.BoolValue(false)
-	// }
-	// if plan.BurnedExplanation.IsNull() {
-	// 	plan.BurnedExplanation = types.StringValue("")
-	// }
-	// if plan.Note.IsNull() {
-	// 	plan.Note = types.StringValue("")
-	// }
-	// if plan.VtPermalink.IsNull() {
-	// 	plan.VtPermalink = types.StringValue("")
-	// }
-
 	// Generate API request body from plan
 	const insertdomain = `mutation InsertDomain ($burned_explanation: String, $autoRenew: Boolean, $name: String, $registrar: String, $creation: date, $expiration: date, $note: String, $vtPermalink: String) {
 		insert_domain(objects: {burned_explanation: $burned_explanation, autoRenew: $autoRenew, name: $name, registrar: $registrar, creation: $creation, expiration: $expiration, note: $note, vtPermalink: $vtPermalink}) {

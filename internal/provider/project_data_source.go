@@ -79,15 +79,15 @@ func (d *projectDataSource) Schema(_ context.Context, _ datasource.SchemaRequest
 				Description: "The identifier of the project.",
 				Computed:    true,
 			},
-			"client_id": schema.StringAttribute{
+			"client_id": schema.Int64Attribute{
 				Description: "The ID of the client",
 				Computed:    true,
 			},
-			"project_type_id": schema.StringAttribute{
+			"project_type_id": schema.Int64Attribute{
 				Description: "The ID of the project type",
 				Computed:    true,
 			},
-			"operator_id": schema.StringAttribute{
+			"operator_id": schema.Int64Attribute{
 				Description: "The ID of the assigned operator",
 				Computed:    true,
 			},
@@ -95,7 +95,7 @@ func (d *projectDataSource) Schema(_ context.Context, _ datasource.SchemaRequest
 				Description: "The project codename",
 				Required:    true,
 			},
-			"complete": schema.StringAttribute{
+			"complete": schema.BoolAttribute{
 				Description: "If the project is complete",
 				Computed:    true,
 			},
@@ -179,7 +179,12 @@ func (d *projectDataSource) Read(ctx context.Context, req datasource.ReadRequest
 		state.ID = types.Int64Value(int64(project["id"].(float64)))
 		state.ClientID = types.Int64Value(int64(project["clientId"].(float64)))
 		state.ProjectTypeID = types.Int64Value(int64(project["projectTypeId"].(float64)))
-		state.OperatorID = types.Int64Value(int64(project["operatorId"].(float64)))
+		operatorId, ok := project["operatorId"].(float64)
+		if !ok || project["operatorId"] == nil {
+			state.OperatorID = types.Int64Value(0)
+		} else {
+			state.OperatorID = types.Int64Value(int64(operatorId))
+		}
 		state.CodeName = types.StringValue(project["codename"].(string))
 		state.Complete = types.BoolValue(project["complete"].(bool))
 		state.StartDate = types.StringValue(project["startDate"].(string))

@@ -27,14 +27,14 @@ data "ghostwriter_project" "testproject" {
 
 ### Read-Only
 
-- `client_id` (String) The ID of the client
-- `complete` (String) If the project is complete
+- `client_id` (Number) The ID of the client
+- `complete` (Boolean) If the project is complete
 - `end_date` (String) The end date of the project
 - `end_time` (String) The end time of the project
 - `id` (Number) The identifier of the project.
 - `note` (String) The note asociated with the project
-- `operator_id` (String) The ID of the assigned operator
-- `project_type_id` (String) The ID of the project type
+- `operator_id` (Number) The ID of the assigned operator
+- `project_type_id` (Number) The ID of the project type
 - `slack_channel` (String) The projects slack channel
 - `start_date` (String) The start date of the project
 - `start_time` (String) The start time of the project

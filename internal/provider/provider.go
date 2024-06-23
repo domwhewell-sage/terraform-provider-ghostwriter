@@ -199,6 +199,7 @@ func (p *ghostwriterProvider) DataSources(_ context.Context) []func() datasource
 	return []func() datasource.DataSource{
 		NewactivitytypeDataSource,
 		NewserverproviderDataSource,
+		NewserverroleDataSource,
 		NewprojectDataSource,
 	}
 }

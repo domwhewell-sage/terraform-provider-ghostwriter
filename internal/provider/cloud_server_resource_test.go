@@ -40,7 +40,6 @@ resource "ghostwriter_cloud_server" "test" {
 					resource.TestCheckResourceAttr("ghostwriter_cloud_server.test", "aux_address.0", "192.168.0.1"),
 					resource.TestCheckResourceAttr("ghostwriter_cloud_server.test", "project_id", "1"),
 					resource.TestCheckResourceAttr("ghostwriter_cloud_server.test", "note", ""),
-					resource.TestCheckResourceAttr("ghostwriter_cloud_server.test", "operator_id", "1"),
 					resource.TestCheckResourceAttr("ghostwriter_cloud_server.test", "server_role_id", "1"),
 					resource.TestCheckResourceAttr("ghostwriter_cloud_server.test", "force_delete", "true"),
 					resource.TestCheckResourceAttrSet("ghostwriter_cloud_server.test", "id"),

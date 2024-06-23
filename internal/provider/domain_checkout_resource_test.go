@@ -88,7 +88,7 @@ resource "ghostwriter_domain_checkout" "test" {
 `,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("ghostwriter_domain_checkout.test", "project_id", "1"),
-					resource.TestCheckResourceAttr("ghostwriter_domain_checkout.test", "domain_id", "2"),
+					resource.TestCheckResourceAttr("ghostwriter_domain_checkout.test", "domain_id", "1"),
 					resource.TestCheckResourceAttr("ghostwriter_domain_checkout.test", "start_date", "2024-01-01"),
 					resource.TestCheckResourceAttr("ghostwriter_domain_checkout.test", "end_date", "2025-01-01"),
 					resource.TestCheckResourceAttr("ghostwriter_domain_checkout.test", "activity_type_id", "1"),

@@ -198,6 +198,7 @@ func (p *ghostwriterProvider) Configure(ctx context.Context, req provider.Config
 func (p *ghostwriterProvider) DataSources(_ context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
 		NewactivitytypeDataSource,
+		NewserverproviderDataSource,
 		NewserverroleDataSource,
 		NewprojectDataSource,
 	}

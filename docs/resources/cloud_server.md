@@ -21,7 +21,6 @@ resource "ghostwriter_cloud_server" "test" {
   aux_address        = ["192.168.0.2"]
   project_id         = 1
   note               = "test note"
-  operator_id        = 1
   server_role_id     = 1
   force_delete       = true
 }
@@ -34,7 +33,6 @@ resource "ghostwriter_cloud_server" "test" {
 
 - `activity_type_id` (Number) How this VPS will be used.
 - `ip_address` (String) The servers IP address.
-- `operator_id` (Number) The operator responsible for this server.
 - `project_id` (Number) The project this server is associated with.
 - `server_provider_id` (Number) The identifier of the server hosting provider.
 - `server_role_id` (Number) The role of the server.

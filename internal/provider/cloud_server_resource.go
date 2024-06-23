@@ -48,7 +48,6 @@ type cloudserverResourceModel struct {
 	AuxAddress       []types.String `tfsdk:"aux_address"`
 	ProjectID        types.Int64    `tfsdk:"project_id"`
 	Note             types.String   `tfsdk:"note"`
-	OperatorID       types.Int64    `tfsdk:"operator_id"`
 	ServerRoleId     types.Int64    `tfsdk:"server_role_id"`
 	ForceDelete      types.Bool     `tfsdk:"force_delete"`
 	LastUpdated      types.String   `tfsdk:"last_updated"`
@@ -139,10 +138,6 @@ func (r *cloudserverResource) Schema(_ context.Context, _ resource.SchemaRequest
 					stringvalidator.LengthBetween(0, 256),
 				},
 			},
-			"operator_id": schema.Int64Attribute{
-				Description: "The operator responsible for this server.",
-				Required:    true,
-			},
 			"server_role_id": schema.Int64Attribute{
 				Description: "The role of the server.",
 				Required:    true,
@@ -184,8 +179,8 @@ func (r *cloudserverResource) Create(ctx context.Context, req resource.CreateReq
 	}
 
 	// Generate API request body from plan
-	const insertcloudserver = `mutation InsertCloudServer ($name: String, $server_provider_id: bigint, $activity_type_id: bigint, $ip: inet, $aux_address: [inet!], $project_id: bigint, $note: String, $operator_id: bigint, $server_role_id: bigint) {
-		insert_cloudServer(objects: {name: $name, serverProviderId: $server_provider_id, activityTypeId: $activity_type_id, ipAddress: $ip, auxAddress: $aux_address, projectId: $project_id, note: $note, operatorId: $operator_id, serverRoleId: $server_role_id}) {
+	const insertcloudserver = `mutation InsertCloudServer ($name: String, $server_provider_id: bigint, $activity_type_id: bigint, $ip: inet, $aux_address: [inet!], $project_id: bigint, $note: String, $server_role_id: bigint) {
+		insert_cloudServer(objects: {name: $name, serverProviderId: $server_provider_id, activityTypeId: $activity_type_id, ipAddress: $ip, auxAddress: $aux_address, projectId: $project_id, note: $note, serverRoleId: $server_role_id}) {
 			returning {
 				id,
 				name,
@@ -195,7 +190,6 @@ func (r *cloudserverResource) Create(ctx context.Context, req resource.CreateReq
 				auxAddress,
 				projectId,
 				note,
-				operatorId,
 				serverRoleId
 			}
 		}
@@ -213,7 +207,6 @@ func (r *cloudserverResource) Create(ctx context.Context, req resource.CreateReq
 	request.Var("aux_address", aux_address)
 	request.Var("project_id", plan.ProjectID.ValueInt64())
 	request.Var("note", plan.Note.ValueString())
-	request.Var("operator_id", plan.OperatorID.ValueInt64())
 	request.Var("server_role_id", plan.ServerRoleId.ValueInt64())
 	var respData map[string]interface{}
 	if err := r.client.Run(ctx, request, &respData); err != nil {
@@ -243,7 +236,6 @@ func (r *cloudserverResource) Create(ctx context.Context, req resource.CreateReq
 		plan.AuxAddress = aux_address_list
 		plan.ProjectID = types.Int64Value(int64(cloud_server["projectId"].(float64)))
 		plan.Note = types.StringValue(cloud_server["note"].(string))
-		plan.OperatorID = types.Int64Value(int64(cloud_server["operatorId"].(float64)))
 		plan.ServerRoleId = types.Int64Value(int64(cloud_server["serverRoleId"].(float64)))
 		plan.LastUpdated = types.StringValue(time.Now().Format(time.RFC850))
 
@@ -283,7 +275,6 @@ func (r *cloudserverResource) Read(ctx context.Context, req resource.ReadRequest
 			auxAddress,
 			projectId,
 			note,
-			operatorId,
 			serverRoleId
 		}
 	}`
@@ -319,7 +310,6 @@ func (r *cloudserverResource) Read(ctx context.Context, req resource.ReadRequest
 		state.AuxAddress = aux_address_list
 		state.ProjectID = types.Int64Value(int64(cloud_server["projectId"].(float64)))
 		state.Note = types.StringValue(cloud_server["note"].(string))
-		state.OperatorID = types.Int64Value(int64(cloud_server["operatorId"].(float64)))
 		state.ServerRoleId = types.Int64Value(int64(cloud_server["serverRoleId"].(float64)))
 
 		// Set refreshed state
@@ -351,8 +341,8 @@ func (r *cloudserverResource) Update(ctx context.Context, req resource.UpdateReq
 	}
 
 	// Generate API request body from plan
-	const updatecloudserver = `mutation UpdateCloudServer ($id: bigint, $name: String, $server_provider_id: bigint, $activity_type_id: bigint, $ip: inet, $aux_address: [inet!], $project_id: bigint, $note: String, $operator_id: bigint, $server_role_id: bigint) {
-		update_cloudServer(where: {id: {_eq: $id}}, _set: {name: $name, serverProviderId: $server_provider_id, activityTypeId: $activity_type_id, ipAddress: $ip, auxAddress: $aux_address, projectId: $project_id, note: $note, operatorId: $operator_id, serverRoleId: $server_role_id}) {
+	const updatecloudserver = `mutation UpdateCloudServer ($id: bigint, $name: String, $server_provider_id: bigint, $activity_type_id: bigint, $ip: inet, $aux_address: [inet!], $project_id: bigint, $note: String, $server_role_id: bigint) {
+		update_cloudServer(where: {id: {_eq: $id}}, _set: {name: $name, serverProviderId: $server_provider_id, activityTypeId: $activity_type_id, ipAddress: $ip, auxAddress: $aux_address, projectId: $project_id, note: $note, serverRoleId: $server_role_id}) {
 			returning {
 				id,
 				name,
@@ -362,7 +352,6 @@ func (r *cloudserverResource) Update(ctx context.Context, req resource.UpdateReq
 				auxAddress,
 				projectId,
 				note,
-				operatorId,
 				serverRoleId
 			}
 		}
@@ -381,7 +370,6 @@ func (r *cloudserverResource) Update(ctx context.Context, req resource.UpdateReq
 	request.Var("aux_address", aux_address)
 	request.Var("project_id", plan.ProjectID.ValueInt64())
 	request.Var("note", plan.Note.ValueString())
-	request.Var("operator_id", plan.OperatorID.ValueInt64())
 	request.Var("server_role_id", plan.ServerRoleId.ValueInt64())
 	var respData map[string]interface{}
 	if err := r.client.Run(ctx, request, &respData); err != nil {
@@ -411,7 +399,6 @@ func (r *cloudserverResource) Update(ctx context.Context, req resource.UpdateReq
 		plan.AuxAddress = aux_address_list
 		plan.ProjectID = types.Int64Value(int64(cloud_server["projectId"].(float64)))
 		plan.Note = types.StringValue(cloud_server["note"].(string))
-		plan.OperatorID = types.Int64Value(int64(cloud_server["operatorId"].(float64)))
 		plan.ServerRoleId = types.Int64Value(int64(cloud_server["serverRoleId"].(float64)))
 		plan.LastUpdated = types.StringValue(time.Now().Format(time.RFC850))
 

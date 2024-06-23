@@ -27,7 +27,6 @@ resource "ghostwriter_cloud_server" "test" {
   ip_address = "192.168.0.1"
   aux_address = ["192.168.0.1"]
   project_id = data.ghostwriter_project.testproject.id
-  operator_id = 1
   server_role_id = 1
   force_delete = true
 }
@@ -73,7 +72,6 @@ resource "ghostwriter_cloud_server" "test" {
   activity_type_id = data.ghostwriter_activity_type.commandandcontrol.id
   ip_address = "192.168.0.2"
   project_id = data.ghostwriter_project.testproject.id
-  operator_id = 1
   server_role_id = 1
   force_delete = true
 }
@@ -86,7 +84,6 @@ resource "ghostwriter_cloud_server" "test" {
 					resource.TestCheckResourceAttr("ghostwriter_cloud_server.test", "aux_address.#", "0"),
 					resource.TestCheckResourceAttr("ghostwriter_cloud_server.test", "project_id", "9"),
 					resource.TestCheckResourceAttr("ghostwriter_cloud_server.test", "note", ""),
-					resource.TestCheckResourceAttr("ghostwriter_cloud_server.test", "operator_id", "1"),
 					resource.TestCheckResourceAttr("ghostwriter_cloud_server.test", "server_role_id", "1"),
 					resource.TestCheckResourceAttr("ghostwriter_cloud_server.test", "force_delete", "true"),
 					resource.TestCheckResourceAttrSet("ghostwriter_cloud_server.test", "id"),

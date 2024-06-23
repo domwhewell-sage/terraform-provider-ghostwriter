@@ -13,13 +13,13 @@ func TestServerProviderDataSource(t *testing.T) {
 			// Read testing
 			{
 				Config: providerConfig + `
-data "ghostwriter_server_provicer" "test" {
+data "ghostwriter_server_provider" "test" {
   name = "Amazon Web Services"
 }
 `,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("data.ghostwriter_server_provicer.test", "name", "Amazon Web Services"),
-					resource.TestCheckResourceAttrSet("data.ghostwriter_server_provicer.test", "id"),
+					resource.TestCheckResourceAttr("data.ghostwriter_server_provider.test", "name", "Amazon Web Services"),
+					resource.TestCheckResourceAttrSet("data.ghostwriter_server_provider.test", "id"),
 				),
 			},
 		},

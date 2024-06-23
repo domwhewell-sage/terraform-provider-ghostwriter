@@ -188,9 +188,19 @@ func (d *projectDataSource) Read(ctx context.Context, req datasource.ReadRequest
 		state.CodeName = types.StringValue(project["codename"].(string))
 		state.Complete = types.BoolValue(project["complete"].(bool))
 		state.StartDate = types.StringValue(project["startDate"].(string))
-		state.StartTime = types.StringValue(project["startTime"].(string))
+		startTime, ok := project["startTime"].(string)
+		if !ok || project["startTime"] == nil {
+			state.StartTime = types.StringValue("")
+		} else {
+			state.StartTime = types.StringValue(startTime)
+		}
 		state.EndDate = types.StringValue(project["endDate"].(string))
-		state.EndTime = types.StringValue(project["endTime"].(string))
+		endTime, ok := project["endTime"].(string)
+		if !ok || project["endTime"] == nil {
+			state.EndTime = types.StringValue("")
+		} else {
+			state.EndTime = types.StringValue(endTime)
+		}
 		state.Timezone = types.StringValue(project["timezone"].(string))
 		state.Note = types.StringValue(project["note"].(string))
 		state.SlackChannel = types.StringValue(project["slackChannel"].(string))

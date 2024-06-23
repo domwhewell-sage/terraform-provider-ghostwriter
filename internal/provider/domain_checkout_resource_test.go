@@ -69,8 +69,8 @@ data "ghostwriter_project" "testproject" {
   code_name = "TestProject"
 }
 
-resource "ghostwriter_domain" "test" {
-  name = "test.com"
+resource "ghostwriter_domain" "updatedtest" {
+  name = "updatedtest.com"
   creation = "2024-01-01"
   expiration = "2025-01-01"
   force_delete = true
@@ -78,17 +78,17 @@ resource "ghostwriter_domain" "test" {
 
 resource "ghostwriter_domain_checkout" "test" {
   project_id       = 1
-  domain_id        = ghostwriter_domain.test.id
+  domain_id        = resource.ghostwriter_domain.updatedtest.id
   start_date       = data.ghostwriter_project.testproject.start_date
   end_date         = data.ghostwriter_project.testproject.end_date
-  activity_type_id = ghostwriter_activity_type.test.id
+  activity_type_id = data.ghostwriter_activity_type.test.id
   note			 = "test note"
   force_delete = true
 }
 `,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("ghostwriter_domain_checkout.test", "project_id", "1"),
-					resource.TestCheckResourceAttr("ghostwriter_domain_checkout.test", "domain_id", "1"),
+					resource.TestCheckResourceAttr("ghostwriter_domain_checkout.test", "domain_id", "2"),
 					resource.TestCheckResourceAttr("ghostwriter_domain_checkout.test", "start_date", "2024-01-01"),
 					resource.TestCheckResourceAttr("ghostwriter_domain_checkout.test", "end_date", "2025-01-01"),
 					resource.TestCheckResourceAttr("ghostwriter_domain_checkout.test", "activity_type_id", "1"),

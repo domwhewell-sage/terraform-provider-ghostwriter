@@ -415,28 +415,27 @@ func (r *domainCheckoutResource) Delete(ctx context.Context, req resource.Delete
 				"Error Deleting Ghostwriter Domain Checkout",
 				"Could not delete domain checkout ID "+strconv.FormatInt(state.ID.ValueInt64(), 10)+": "+err.Error(),
 			)
-			return
 		}
 	} else {
 		tflog.Info(ctx, "Cowardly refusing to delete domain checkout. Releasing domain to the ghostwriter pool and the domain checkout record will remain. Set force_delete to true to delete domain checkout record.")
-		// Generate API request body from plan
-		const releasedomain = `mutation UpdateDomain ($id: bigint) {
-			update_domain(where: {id: {_eq: $id}}, _set: {domainStatusId: 1}) {
-				returning {
-					id
-				}
+	}
+	// Generate API request body from plan
+	const releasedomain = `mutation UpdateDomain ($id: bigint) {
+		update_domain(where: {id: {_eq: $id}}, _set: {domainStatusId: 1}) {
+			returning {
+				id
 			}
-		}`
-		tflog.Debug(ctx, fmt.Sprintf("Releasing domain to the pool: %v", state))
-		request := graphql.NewRequest(releasedomain)
-		request.Var("id", state.DomainId.ValueInt64())
-		var respData map[string]interface{}
-		if err := r.client.Run(ctx, request, &respData); err != nil {
-			resp.Diagnostics.AddError(
-				"Error Deleting Ghostwriter Domain Checkout",
-				"Could not delete domain checkout ID "+strconv.FormatInt(state.ID.ValueInt64(), 10)+": "+err.Error(),
-			)
-			return
 		}
+	}`
+	tflog.Debug(ctx, fmt.Sprintf("Releasing domain to the pool: %v", state))
+	request := graphql.NewRequest(releasedomain)
+	request.Var("id", state.DomainId.ValueInt64())
+	var respData map[string]interface{}
+	if err := r.client.Run(ctx, request, &respData); err != nil {
+		resp.Diagnostics.AddError(
+			"Error Deleting Ghostwriter Domain Checkout",
+			"Could not delete domain checkout ID "+strconv.FormatInt(state.ID.ValueInt64(), 10)+": "+err.Error(),
+		)
+		return
 	}
 }

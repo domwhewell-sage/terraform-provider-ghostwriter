@@ -19,7 +19,7 @@ data "ghostwriter_server_role" "test" {
 `,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("data.ghostwriter_server_role.test", "name", "Team Server / C2 Server"),
-					resource.TestCheckResourceAttrSet("data.ghostwriter_activity_type.test", "id"),
+					resource.TestCheckResourceAttrSet("data.ghostwriter_server_role.test", "id"),
 				),
 			},
 		},

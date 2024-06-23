@@ -18,7 +18,7 @@ data "ghostwriter_activity_type" "test" {
 }
 
 data "ghostwriter_project" "testproject" {
-  code_name = "Test Project"
+  code_name = "TestProject"
 }
 
 resource "ghostwriter_domain" "test" {
@@ -66,7 +66,7 @@ data "ghostwriter_activity_type" "test" {
 }
 
 data "ghostwriter_project" "testproject" {
-  code_name = "Test Project"
+  code_name = "TestProject"
 }
 
 resource "ghostwriter_domain" "test" {

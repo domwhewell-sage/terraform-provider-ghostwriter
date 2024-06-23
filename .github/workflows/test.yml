@@ -110,10 +110,15 @@ jobs:
       run: |
         export GHOSTWRITER_USERNAME="admin"
         export GHOSTWRITER_PASSWORD=$(./ghostwriter-cli-linux config get ADMIN_PASSWORD | grep ADMIN_PASSWORD | awk '{print $2}')
-        echo GHOSTWRITER_API_KEY=$(curl -X POST -H "Content-Type: application/json" -d "{\"query\": \"mutation Login { login(password: \\\"$GHOSTWRITER_PASSWORD\\\", username: \\\"$GHOSTWRITER_USERNAME\\\") { token expires } }\"}" http://localhost:8080/v1/graphql | jq -r .data.login.token) >> $GITHUB_ENV
+        echo GHOSTWRITER_API_KEY=$(curl -X POST -H "Content-Type: application/json" -d '{"query": "mutation Login { login(password: \"'$GHOSTWRITER_PASSWORD'\", username: \"'$GHOSTWRITER_USERNAME'\") { token expires } }"}' http://localhost:8080/v1/graphql | jq -r .data.login.token) >> $GITHUB_ENV
+    
+    - name: Create test client and test project in ghostwriter
+      working-directory: ./ghostwriter
+      run: |
+        export GHOSTWRITER_CLIENT_ID=$(curl -X POST -H "Content-Type: application/json" -H "Authorization: Bearer $GHOSTWRITER_API_KEY" -d '{"query": "mutation InsertClient { insert_client(objects: {name: \"TestClient\", shortName: \"TC\", codename: \"tc\", note: \"Test Note\", address: \"Test Address\"}) { returning { id } } }"}' http://localhost:8080/v1/graphql | jq -r .data.insert_client.returning[0].id)
+        curl -X POST -H "Content-Type: application/json" -H "Authorization: Bearer $GHOSTWRITER_API_KEY" -d '{"query": "mutation InsertProject { insert_project(objects: {clientId: \"'$GHOSTWRITER_CLIENT_ID'\", codename: \"TestProject\", endDate: \"2025-01-01\", startDate: \"2024-01-01\", note: \"Test Note\", slackChannel: \"#test\", projectTypeId: \"1\"}) { returning { id } } }"}' http://localhost:8080/v1/graphql
         
     - name: TF acceptance tests
-      if: steps.gw_health.outcome == 'success'
       timeout-minutes: 10
       env:
         TF_ACC: "1"

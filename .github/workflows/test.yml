@@ -130,3 +130,8 @@ jobs:
 
       run: |
         go test -v -cover ./internal/provider/
+    
+    - name: Gather ghostwriter logs
+      working-directory: ./ghostwriter
+      run: |
+        ./ghostwriter-cli-linux logs graphql --dev

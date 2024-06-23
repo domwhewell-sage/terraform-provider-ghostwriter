@@ -132,6 +132,7 @@ jobs:
         go test -v -cover ./internal/provider/
     
     - name: Gather ghostwriter logs
+      if: always()
       working-directory: ./ghostwriter
       run: |
         ./ghostwriter-cli-linux logs graphql --dev

@@ -36,7 +36,7 @@ resource "ghostwriter_domain" "example" {
 
 - `auto_renew` (Boolean) Whether the domain is set to auto-renew.
 - `burned_explanation` (String) Explanation of why the domain was burned.
-- `force_delete` (Boolean) If false, the domain will be soft-deleted left to expire by the ghostwriter instance. If true, the domain will be hard-deleted from the ghostwriter instance. Default is false.
+- `force_delete` (Boolean) If false, will not be deleted from the ghostwriter instance when not managed by terraform. If true, the domain will be hard-deleted from the ghostwriter instance. Default is false.
 - `note` (String) Additional notes about the domain.
 - `registrar` (String) The domain registrar. e.g. GoDaddy, Namecheap, etc.
 - `vt_permalink` (String) The VirusTotal permalink for the domain.

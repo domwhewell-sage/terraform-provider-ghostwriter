@@ -40,7 +40,7 @@ resource "ghostwriter_cloud_server" "test" {
 ### Optional
 
 - `aux_address` (List of String) Any additional IP addresses associated with the server.
-- `force_delete` (Boolean) If false, the server will be soft-deleted left to expire by the ghostwriter instance. If true, the server will be hard-deleted from the ghostwriter instance. Default is false.
+- `force_delete` (Boolean) If false, will not be deleted from the ghostwriter instance when not managed by terraform. If true, the server will be hard-deleted from the ghostwriter instance. Default is false.
 - `name` (String) The name of the server typically its hostname.
 - `note` (String) Additional notes about the cloud server.
 

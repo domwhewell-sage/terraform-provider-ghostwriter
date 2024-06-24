@@ -143,7 +143,7 @@ func (r *cloudserverResource) Schema(_ context.Context, _ resource.SchemaRequest
 				Required:    true,
 			},
 			"force_delete": schema.BoolAttribute{
-				Description: "If false, the server will be soft-deleted left to expire by the ghostwriter instance. If true, the server will be hard-deleted from the ghostwriter instance. Default is false.",
+				Description: "If false, will not be deleted from the ghostwriter instance when not managed by terraform. If true, the server will be hard-deleted from the ghostwriter instance. Default is false.",
 				Optional:    true,
 				Computed:    true,
 				Default:     booldefault.StaticBool(false),

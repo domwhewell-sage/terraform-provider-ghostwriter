@@ -209,6 +209,7 @@ func (p *ghostwriterProvider) Resources(_ context.Context) []func() resource.Res
 	return []func() resource.Resource{
 		NewdomainResource,
 		NewdomainCheckoutResource,
+		NewstaticserverResource,
 		NewcloudserverResource,
 		NewoplogResource,
 		NewdomainserverResource,

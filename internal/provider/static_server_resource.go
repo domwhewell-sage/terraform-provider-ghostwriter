@@ -41,7 +41,7 @@ type staticserverResourceModel struct {
 	ID               types.Int64  `tfsdk:"id"`
 	Name             types.String `tfsdk:"name"`
 	ServerProviderID types.Int64  `tfsdk:"server_provider_id"`
-	serverStatusId   types.Int64  `tfsdk:"server_status_id"`
+	ServerStatusId   types.Int64  `tfsdk:"server_status_id"`
 	IpAddress        types.String `tfsdk:"ip_address"`
 	Note             types.String `tfsdk:"note"`
 	LastUpdated      types.String `tfsdk:"last_updated"`
@@ -84,7 +84,7 @@ func (r *staticserverResource) Schema(_ context.Context, _ resource.SchemaReques
 				Computed:    true,
 			},
 			"last_updated": schema.StringAttribute{
-				Description: "Timestamp of the last Terraform update of the domain.",
+				Description: "Timestamp of the last Terraform update of the server.",
 				Computed:    true,
 			},
 			"name": schema.StringAttribute{
@@ -115,7 +115,7 @@ func (r *staticserverResource) Schema(_ context.Context, _ resource.SchemaReques
 				},
 			},
 			"note": schema.StringAttribute{
-				Description: "Additional notes about the domain.",
+				Description: "Additional notes about the server.",
 				Optional:    true,
 				Computed:    true,
 				Default:     stringdefault.StaticString(""),
@@ -168,7 +168,7 @@ func (r *staticserverResource) Create(ctx context.Context, req resource.CreateRe
 	request := graphql.NewRequest(insertserver)
 	request.Var("name", plan.Name.ValueString())
 	request.Var("server_provider_id", plan.ServerProviderID.ValueInt64())
-	request.Var("server_status_id", plan.serverStatusId.ValueInt64())
+	request.Var("server_status_id", plan.ServerStatusId.ValueInt64())
 	request.Var("ip", plan.IpAddress.ValueString())
 	request.Var("note", plan.Note.ValueString())
 	var respData map[string]interface{}
@@ -187,7 +187,7 @@ func (r *staticserverResource) Create(ctx context.Context, req resource.CreateRe
 		plan.ID = types.Int64Value(int64(server["id"].(float64)))
 		plan.Name = types.StringValue(server["name"].(string))
 		plan.ServerProviderID = types.Int64Value(int64(server["serverProviderId"].(float64)))
-		plan.serverStatusId = types.Int64Value(int64(server["serverStatusId"].(float64)))
+		plan.ServerStatusId = types.Int64Value(int64(server["serverStatusId"].(float64)))
 		plan.IpAddress = types.StringValue(server["ipAddress"].(string))
 		plan.Note = types.StringValue(server["note"].(string))
 		plan.LastUpdated = types.StringValue(time.Now().Format(time.RFC850))
@@ -218,7 +218,7 @@ func (r *staticserverResource) Read(ctx context.Context, req resource.ReadReques
 	}
 
 	// Generate API request body from plan
-	const querydomain = `query StaticServer ($id: bigint){
+	const queryserver = `query StaticServer ($id: bigint){
 		staticServer(where: {id: {_eq: $id}}) {
 			id,
 			name,
@@ -229,7 +229,7 @@ func (r *staticserverResource) Read(ctx context.Context, req resource.ReadReques
 		}
 	}`
 	tflog.Debug(ctx, fmt.Sprintf("Reading server: %v", state.ID))
-	request := graphql.NewRequest(querydomain)
+	request := graphql.NewRequest(queryserver)
 	request.Var("id", state.ID.ValueInt64())
 	var respData map[string]interface{}
 	if err := r.client.Run(ctx, request, &respData); err != nil {
@@ -248,7 +248,7 @@ func (r *staticserverResource) Read(ctx context.Context, req resource.ReadReques
 		state.ID = types.Int64Value(int64(server["id"].(float64)))
 		state.Name = types.StringValue(server["name"].(string))
 		state.ServerProviderID = types.Int64Value(int64(server["serverProviderId"].(float64)))
-		state.serverStatusId = types.Int64Value(int64(server["serverStatusId"].(float64)))
+		state.ServerStatusId = types.Int64Value(int64(server["serverStatusId"].(float64)))
 		state.IpAddress = types.StringValue(server["ipAddress"].(string))
 		state.Note = types.StringValue(server["note"].(string))
 		state.LastUpdated = types.StringValue(time.Now().Format(time.RFC850))
@@ -298,7 +298,7 @@ func (r *staticserverResource) Update(ctx context.Context, req resource.UpdateRe
 	request.Var("id", state.ID.ValueInt64())
 	request.Var("name", plan.Name.ValueString())
 	request.Var("server_provider_id", plan.ServerProviderID.ValueInt64())
-	request.Var("server_status_id", plan.serverStatusId.ValueInt64())
+	request.Var("server_status_id", plan.ServerStatusId.ValueInt64())
 	request.Var("ip", plan.IpAddress.ValueString())
 	request.Var("note", plan.Note.ValueString())
 	var respData map[string]interface{}
@@ -317,7 +317,7 @@ func (r *staticserverResource) Update(ctx context.Context, req resource.UpdateRe
 		plan.ID = types.Int64Value(int64(server["id"].(float64)))
 		plan.Name = types.StringValue(server["name"].(string))
 		plan.ServerProviderID = types.Int64Value(int64(server["serverProviderId"].(float64)))
-		plan.serverStatusId = types.Int64Value(int64(server["serverStatusId"].(float64)))
+		plan.ServerStatusId = types.Int64Value(int64(server["serverStatusId"].(float64)))
 		plan.IpAddress = types.StringValue(server["ipAddress"].(string))
 		plan.Note = types.StringValue(server["note"].(string))
 		plan.LastUpdated = types.StringValue(time.Now().Format(time.RFC850))
@@ -327,7 +327,7 @@ func (r *staticserverResource) Update(ctx context.Context, req resource.UpdateRe
 	} else {
 		resp.Diagnostics.AddError(
 			"Error Updating Ghostwriter Server",
-			"Could not update server ID "+strconv.FormatInt(plan.ID.ValueInt64(), 10)+": Domain not found",
+			"Could not update server ID "+strconv.FormatInt(plan.ID.ValueInt64(), 10)+": Server not found",
 		)
 	}
 

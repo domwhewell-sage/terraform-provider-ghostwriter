@@ -37,7 +37,7 @@ resource "ghostwriter_static_server" "test" {
 				ImportStateVerify: true,
 				// The last_updated attribute does not exist in the HashiCups
 				// API, therefore there is no value for it during import.
-				ImportStateVerifyIgnore: []string{"force_delete", "last_updated"},
+				ImportStateVerifyIgnore: []string{"last_updated"},
 			},
 			// Update and Read testing
 			{

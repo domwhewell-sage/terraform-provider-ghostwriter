@@ -32,10 +32,10 @@ resource "ghostwriter_static_server" "test" {
 ### Optional
 
 - `name` (String) The name of the server typically its hostname.
-- `note` (String) Additional notes about the domain.
+- `note` (String) Additional notes about the server.
 - `server_status_id` (Number) The identifier of the server status.
 
 ### Read-Only
 
 - `id` (Number) Placeholder identifier attribute
-- `last_updated` (String) Timestamp of the last Terraform update of the domain.
+- `last_updated` (String) Timestamp of the last Terraform update of the server.

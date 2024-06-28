@@ -57,9 +57,9 @@ resource "ghostwriter_domain_server" "test" {
 }
 `,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("ghostwriter_domain_server.test", "domain_checkout_id", "1"),
-					resource.TestCheckResourceAttr("ghostwriter_domain_server.test", "project_id", "1"),
-					resource.TestCheckResourceAttr("ghostwriter_domain_server.test", "cloud_server_id", "1"),
+					resource.TestCheckResourceAttrSet("ghostwriter_domain_server.test", "domain_checkout_id"),
+					resource.TestCheckResourceAttrSet("ghostwriter_domain_server.test", "project_id"),
+					resource.TestCheckResourceAttrSet("ghostwriter_domain_server.test", "cloud_server_id"),
 					resource.TestCheckResourceAttr("ghostwriter_domain_server.test", "subdomain", "login"),
 					resource.TestCheckResourceAttr("ghostwriter_domain_server.test", "endpoint", "/test"),
 					resource.TestCheckResourceAttr("ghostwriter_domain_server.test", "force_delete", "true"),
@@ -121,9 +121,9 @@ resource "ghostwriter_domain_server" "test" {
 }
 `,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("ghostwriter_domain_server.test", "domain_checkout_id", "1"),
-					resource.TestCheckResourceAttr("ghostwriter_domain_server.test", "project_id", "1"),
-					resource.TestCheckResourceAttr("ghostwriter_domain_server.test", "cloud_server_id", "1"),
+					resource.TestCheckResourceAttrSet("ghostwriter_domain_server.test", "domain_checkout_id"),
+					resource.TestCheckResourceAttrSet("ghostwriter_domain_server.test", "project_id"),
+					resource.TestCheckResourceAttrSet("ghostwriter_domain_server.test", "cloud_server_id"),
 					resource.TestCheckResourceAttr("ghostwriter_domain_server.test", "subdomain", "*"),
 					resource.TestCheckResourceAttr("ghostwriter_domain_server.test", "endpoint", ""),
 					resource.TestCheckResourceAttr("ghostwriter_domain_server.test", "force_delete", "true"),

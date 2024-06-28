@@ -99,7 +99,7 @@ func (r *staticserverResource) Schema(_ context.Context, _ resource.SchemaReques
 			},
 			"server_status_id": schema.Int64Attribute{
 				Description: "The identifier of the server status.",
-				Required:    true,
+				Optional:    true,
 				Computed:    true,
 				Default:     int64default.StaticInt64(1),
 			},

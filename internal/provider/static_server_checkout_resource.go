@@ -170,7 +170,7 @@ func (r *staticserverCheckoutResource) Create(ctx context.Context, req resource.
 
 	// Generate API request body from plan
 	const checkoutserver = `mutation checkoutServer ($activity_type_id: Int!, $server_id: Int!, $project_id: Int!, $note: String, $start_date: date!, $end_date: date!) {
-		checkoutServer(activityTypeId: $activity_type_id, serverId: $serverId, projectId: $project_id, note: $note, startDate: $start_date, endDate: $end_date) {
+		checkoutServer(activityTypeId: $activity_type_id, serverId: $server_id, projectId: $project_id, note: $note, startDate: $start_date, endDate: $end_date) {
 			result
 		}
 	}`

@@ -40,6 +40,7 @@ type staticserverCheckoutResource struct {
 type staticserverCheckoutResourceModel struct {
 	ID             types.Int64  `tfsdk:"id"`
 	ActivityTypeId types.Int64  `tfsdk:"activity_type_id"`
+	ServerRoleId   types.Int64  `tfsdk:"server_role_id"`
 	ServerId       types.Int64  `tfsdk:"server_id"`
 	ProjectId      types.Int64  `tfsdk:"project_id"`
 	Note           types.String `tfsdk:"note"`
@@ -123,6 +124,10 @@ func (r *staticserverCheckoutResource) Schema(_ context.Context, _ resource.Sche
 				Description: "The unique identifier of the activity type being performed.",
 				Required:    true,
 			},
+			"server_role_id": schema.Int64Attribute{
+				Description: "The role of the server.",
+				Required:    true,
+			},
 			"note": schema.StringAttribute{
 				Description: "Project-related notes, such as how the server will be used/how it worked out.",
 				Optional:    true,
@@ -169,8 +174,8 @@ func (r *staticserverCheckoutResource) Create(ctx context.Context, req resource.
 	}
 
 	// Generate API request body from plan
-	const checkoutserver = `mutation checkoutServer ($activity_type_id: Int!, $server_id: Int!, $project_id: Int!, $note: String, $start_date: date!, $end_date: date!) {
-		checkoutServer(activityTypeId: $activity_type_id, serverId: $server_id, projectId: $project_id, note: $note, startDate: $start_date, endDate: $end_date) {
+	const checkoutserver = `mutation checkoutServer ($activity_type_id: Int!, $server_id: Int!, $project_id: Int!, $note: String, $start_date: date!, $end_date: date!, $server_role_id: bigint) {
+		checkoutServer(activityTypeId: $activity_type_id, serverId: $server_id, projectId: $project_id, note: $note, startDate: $start_date, endDate: $end_date, serverRoleId: $server_role_id) {
 			result
 		}
 	}`
@@ -182,6 +187,7 @@ func (r *staticserverCheckoutResource) Create(ctx context.Context, req resource.
 	request.Var("note", plan.Note.ValueString())
 	request.Var("start_date", plan.StartDate.ValueString())
 	request.Var("end_date", plan.EndDate.ValueString())
+	request.Var("server_role_id", plan.ServerRoleId.ValueInt64())
 	var respData map[string]interface{}
 	if err := r.client.Run(ctx, request, &respData); err != nil {
 		resp.Diagnostics.AddError(
@@ -205,6 +211,7 @@ func (r *staticserverCheckoutResource) Create(ctx context.Context, req resource.
 			activityType {
 			  id
 			}
+			serverRoleId
 		}
 	}`
 	tflog.Debug(ctx, fmt.Sprintf("Query server checkout ID: %v", plan.ServerId.ValueInt64()))
@@ -231,6 +238,7 @@ func (r *staticserverCheckoutResource) Create(ctx context.Context, req resource.
 		plan.Note = types.StringValue(latest_checkout["note"].(string))
 		plan.StartDate = types.StringValue(latest_checkout["startDate"].(string))
 		plan.EndDate = types.StringValue(latest_checkout["endDate"].(string))
+		plan.ServerRoleId = types.Int64Value(int64(latest_checkout["serverRoleId"].(float64)))
 		plan.LastUpdated = types.StringValue(time.Now().Format(time.RFC850))
 
 		// Set state to fully populated data
@@ -269,6 +277,7 @@ func (r *staticserverCheckoutResource) Read(ctx context.Context, req resource.Re
 			activityType {
 			  id
 			}
+			serverRoleId
 		}
 	}`
 	tflog.Debug(ctx, fmt.Sprintf("Query server checkout ID: %v", state.ID.ValueInt64()))
@@ -295,6 +304,7 @@ func (r *staticserverCheckoutResource) Read(ctx context.Context, req resource.Re
 		state.Note = types.StringValue(latest_checkout["note"].(string))
 		state.StartDate = types.StringValue(latest_checkout["startDate"].(string))
 		state.EndDate = types.StringValue(latest_checkout["endDate"].(string))
+		state.ServerRoleId = types.Int64Value(int64(latest_checkout["serverRoleId"].(float64)))
 
 		// Set refreshed state
 		diags = resp.State.Set(ctx, &state)
@@ -337,6 +347,7 @@ func (r *staticserverCheckoutResource) Update(ctx context.Context, req resource.
 				activityType {
 				  id
 				}
+				serverRoleId
 			}
 		}
 	}`
@@ -349,6 +360,7 @@ func (r *staticserverCheckoutResource) Update(ctx context.Context, req resource.
 	request.Var("note", plan.Note.ValueString())
 	request.Var("start_date", plan.StartDate.ValueString())
 	request.Var("end_date", plan.EndDate.ValueString())
+	request.Var("server_role_id", plan.ServerRoleId.ValueInt64())
 	var respData map[string]interface{}
 	if err := r.client.Run(ctx, request, &respData); err != nil {
 		resp.Diagnostics.AddError(
@@ -370,6 +382,7 @@ func (r *staticserverCheckoutResource) Update(ctx context.Context, req resource.
 		plan.Note = types.StringValue(updated_server_checkout["note"].(string))
 		plan.StartDate = types.StringValue(updated_server_checkout["startDate"].(string))
 		plan.EndDate = types.StringValue(updated_server_checkout["endDate"].(string))
+		plan.ServerRoleId = types.Int64Value(int64(updated_server_checkout["serverRoleId"].(float64)))
 		plan.LastUpdated = types.StringValue(time.Now().Format(time.RFC850))
 
 		// Set state to fully populated data

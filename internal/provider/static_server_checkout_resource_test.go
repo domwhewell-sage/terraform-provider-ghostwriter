@@ -34,6 +34,7 @@ resource "ghostwriter_static_server_checkout" "test" {
   start_date       = data.ghostwriter_project.testproject.start_date
   end_date         = data.ghostwriter_project.testproject.end_date
   activity_type_id = data.ghostwriter_activity_type.test.id
+  server_role_id = 1
   force_delete = true
 }
 `,
@@ -44,6 +45,7 @@ resource "ghostwriter_static_server_checkout" "test" {
 					resource.TestCheckResourceAttr("ghostwriter_static_server_checkout.test", "end_date", "2025-01-01"),
 					resource.TestCheckResourceAttr("ghostwriter_static_server_checkout.test", "activity_type_id", "1"),
 					resource.TestCheckResourceAttr("ghostwriter_static_server_checkout.test", "note", ""),
+					resource.TestCheckResourceAttr("ghostwriter_static_server_checkout.test", "server_role_id", "1"),
 					resource.TestCheckResourceAttr("ghostwriter_static_server_checkout.test", "force_delete", "true"),
 					resource.TestCheckResourceAttrSet("ghostwriter_static_server_checkout.test", "id"),
 					resource.TestCheckResourceAttrSet("ghostwriter_static_server_checkout.test", "last_updated"),
@@ -51,7 +53,7 @@ resource "ghostwriter_static_server_checkout" "test" {
 			},
 			// ImportState testing
 			{
-				ResourceName:      "ghostwriter_domain_checkout.test",
+				ResourceName:      "ghostwriter_static_server_checkout.test",
 				ImportState:       true,
 				ImportStateVerify: true,
 				// The last_updated attribute does not exist in the HashiCups
@@ -82,6 +84,7 @@ resource "ghostwriter_static_server_checkout" "test" {
   start_date       = data.ghostwriter_project.testproject.start_date
   end_date         = data.ghostwriter_project.testproject.end_date
   activity_type_id = data.ghostwriter_activity_type.test.id
+  server_role_id = 1
   force_delete = true
 }
 `,
@@ -92,6 +95,7 @@ resource "ghostwriter_static_server_checkout" "test" {
 					resource.TestCheckResourceAttr("ghostwriter_static_server_checkout.test", "end_date", "2025-01-01"),
 					resource.TestCheckResourceAttr("ghostwriter_static_server_checkout.test", "activity_type_id", "1"),
 					resource.TestCheckResourceAttr("ghostwriter_static_server_checkout.test", "note", ""),
+					resource.TestCheckResourceAttr("ghostwriter_static_server_checkout.test", "server_role_id", "1"),
 					resource.TestCheckResourceAttr("ghostwriter_static_server_checkout.test", "force_delete", "true"),
 					resource.TestCheckResourceAttrSet("ghostwriter_static_server_checkout.test", "id"),
 					resource.TestCheckResourceAttrSet("ghostwriter_static_server_checkout.test", "last_updated"),

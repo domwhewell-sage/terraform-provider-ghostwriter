@@ -30,7 +30,7 @@ resource "ghostwriter_static_server" "test" {
 
 resource "ghostwriter_static_server_checkout" "test" {
   project_id       = data.ghostwriter_project.testproject.id
-  server_id        = resource.ghostwriter_static_server.test.id
+  server_id        = 1
   start_date       = data.ghostwriter_project.testproject.start_date
   end_date         = data.ghostwriter_project.testproject.end_date
   activity_type_id = data.ghostwriter_activity_type.test.id
@@ -80,7 +80,7 @@ resource "ghostwriter_static_server" "test" {
 
 resource "ghostwriter_static_server_checkout" "test" {
   project_id       = data.ghostwriter_project.testproject.id
-  server_id        = resource.ghostwriter_static_server.test.id
+  server_id        = 1
   start_date       = data.ghostwriter_project.testproject.start_date
   end_date         = data.ghostwriter_project.testproject.end_date
   activity_type_id = data.ghostwriter_activity_type.test.id

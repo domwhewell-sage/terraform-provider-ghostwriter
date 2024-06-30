@@ -10,6 +10,63 @@ func TestDomainServerResource(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
+			{
+				Config: providerConfig + `
+data "ghostwriter_activity_type" "test" {
+  name = "Command and Control"
+}
+
+data "ghostwriter_project" "testproject" {
+  code_name = "TestProject"
+}
+
+resource "ghostwriter_domain" "test" {
+  name = "test.com"
+  creation = "2024-01-01"
+  expiration = "2025-01-01"
+  force_delete = true
+}
+
+resource "ghostwriter_domain_checkout" "test" {
+  project_id       = data.ghostwriter_project.testproject.id
+  domain_id        = resource.ghostwriter_domain.test.id
+  start_date       = data.ghostwriter_project.testproject.start_date
+  end_date         = data.ghostwriter_project.testproject.end_date
+  activity_type_id = data.ghostwriter_activity_type.test.id
+  force_delete = true
+}
+
+resource "ghostwriter_static_server_checkout" "test" {
+  project_id       = 1
+  server_id        = 1
+  start_date       = "2024-01-01"
+  end_date         = "2025-01-01"
+  activity_type_id = 1
+  server_role_id = 1
+  note = "Test Note"
+  force_delete = true
+}
+
+resource "ghostwriter_domain_server" "test" {
+  domain_checkout_id       = resource.ghostwriter_domain_checkout.test.id
+  project_id        = data.ghostwriter_project.testproject.id
+  static_server_checkout_id       = resource.ghostwriter_static_server_checkout.test.id
+  subdomain         = "login"
+  endpoint = "/test"
+  force_delete = true
+}
+`,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("ghostwriter_domain_server.test", "domain_checkout_id"),
+					resource.TestCheckResourceAttrSet("ghostwriter_domain_server.test", "project_id"),
+					resource.TestCheckResourceAttrSet("ghostwriter_domain_server.test", "static_server_checkout_id"),
+					resource.TestCheckResourceAttr("ghostwriter_domain_server.test", "subdomain", "login"),
+					resource.TestCheckResourceAttr("ghostwriter_domain_server.test", "endpoint", "/test"),
+					resource.TestCheckResourceAttr("ghostwriter_domain_server.test", "force_delete", "true"),
+					resource.TestCheckResourceAttrSet("ghostwriter_domain_server.test", "id"),
+					resource.TestCheckResourceAttrSet("ghostwriter_domain_server.test", "last_updated"),
+				),
+			},
 			// Create and Read testing
 			{
 				Config: providerConfig + `

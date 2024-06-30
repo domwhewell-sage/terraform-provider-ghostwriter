@@ -13,27 +13,12 @@ func TestDomainCheckoutResource(t *testing.T) {
 			// Create and Read testing
 			{
 				Config: providerConfig + `
-data "ghostwriter_activity_type" "test" {
-  name = "Command and Control"
-}
-
-data "ghostwriter_project" "testproject" {
-  code_name = "TestProject"
-}
-
-resource "ghostwriter_domain" "test" {
-  name = "test.com"
-  creation = "2024-01-01"
-  expiration = "2025-01-01"
-  force_delete = true
-}
-
 resource "ghostwriter_domain_checkout" "test" {
-  project_id       = data.ghostwriter_project.testproject.id
-  domain_id        = resource.ghostwriter_domain.test.id
-  start_date       = data.ghostwriter_project.testproject.start_date
-  end_date         = data.ghostwriter_project.testproject.end_date
-  activity_type_id = data.ghostwriter_activity_type.test.id
+  project_id       = 1
+  domain_id        = 1
+  start_date       = "2024-01-01"
+  end_date         = "2025-01-01"
+  activity_type_id = 1
   force_delete = true
 }
 `,
@@ -61,27 +46,12 @@ resource "ghostwriter_domain_checkout" "test" {
 			// Update and Read testing
 			{
 				Config: providerConfig + `
-data "ghostwriter_activity_type" "test" {
-  name = "Command and Control"
-}
-
-data "ghostwriter_project" "testproject" {
-  code_name = "TestProject"
-}
-
-resource "ghostwriter_domain" "test" {
-  name = "test.com"
-  creation = "2024-01-01"
-  expiration = "2025-01-01"
-  force_delete = true
-}
-
 resource "ghostwriter_domain_checkout" "test" {
-  project_id       = data.ghostwriter_project.testproject.id
-  domain_id        = resource.ghostwriter_domain.test.id
-  start_date       = data.ghostwriter_project.testproject.start_date
-  end_date         = data.ghostwriter_project.testproject.end_date
-  activity_type_id = data.ghostwriter_activity_type.test.id
+  project_id       = 1
+  domain_id        = 1
+  start_date       = "2024-01-01"
+  end_date         = "2025-01-01"
+  activity_type_id = 1
   note			 = "test note"
   force_delete = true
 }

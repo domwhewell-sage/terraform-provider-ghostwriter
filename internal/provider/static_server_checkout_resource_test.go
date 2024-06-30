@@ -13,28 +13,14 @@ func TestStaticServerCheckoutResource(t *testing.T) {
 			// Create and Read testing
 			{
 				Config: providerConfig + `
-data "ghostwriter_activity_type" "test" {
-  name = "Command and Control"
-}
-
-data "ghostwriter_project" "testproject" {
-  code_name = "TestProject"
-}
-
-resource "ghostwriter_static_server" "test" {
-  name = "hostname"
-  server_provider_id = 1
-  ip_address = "192.168.0.1"
-  note = "Test Note"
-}
-
 resource "ghostwriter_static_server_checkout" "test" {
-  project_id       = data.ghostwriter_project.testproject.id
+  project_id       = 1
   server_id        = 1
-  start_date       = data.ghostwriter_project.testproject.start_date
-  end_date         = data.ghostwriter_project.testproject.end_date
-  activity_type_id = data.ghostwriter_activity_type.test.id
+  start_date       = "2024-01-01"
+  end_date         = "2025-01-01"
+  activity_type_id = 1
   server_role_id = 1
+  note = "Test Note"
   force_delete = true
 }
 `,
@@ -44,7 +30,7 @@ resource "ghostwriter_static_server_checkout" "test" {
 					resource.TestCheckResourceAttr("ghostwriter_static_server_checkout.test", "start_date", "2024-01-01"),
 					resource.TestCheckResourceAttr("ghostwriter_static_server_checkout.test", "end_date", "2025-01-01"),
 					resource.TestCheckResourceAttr("ghostwriter_static_server_checkout.test", "activity_type_id", "1"),
-					resource.TestCheckResourceAttr("ghostwriter_static_server_checkout.test", "note", ""),
+					resource.TestCheckResourceAttr("ghostwriter_static_server_checkout.test", "note", "Test Note"),
 					resource.TestCheckResourceAttr("ghostwriter_static_server_checkout.test", "server_role_id", "1"),
 					resource.TestCheckResourceAttr("ghostwriter_static_server_checkout.test", "force_delete", "true"),
 					resource.TestCheckResourceAttrSet("ghostwriter_static_server_checkout.test", "id"),
@@ -63,27 +49,12 @@ resource "ghostwriter_static_server_checkout" "test" {
 			// Update and Read testing
 			{
 				Config: providerConfig + `
-data "ghostwriter_activity_type" "test" {
-  name = "Command and Control"
-}
-
-data "ghostwriter_project" "testproject" {
-  code_name = "TestProject"
-}
-
-resource "ghostwriter_static_server" "test" {
-  name = "hostname"
-  server_provider_id = 1
-  ip_address = "192.168.0.1"
-  note = "Test Note"
-}
-
 resource "ghostwriter_static_server_checkout" "test" {
-  project_id       = data.ghostwriter_project.testproject.id
+  project_id       = 1
   server_id        = 1
-  start_date       = data.ghostwriter_project.testproject.start_date
-  end_date         = data.ghostwriter_project.testproject.end_date
-  activity_type_id = data.ghostwriter_activity_type.test.id
+  start_date       = "2024-01-01"
+  end_date         = "2025-01-01"
+  activity_type_id = 1
   server_role_id = 1
   force_delete = true
 }
@@ -92,7 +63,7 @@ resource "ghostwriter_static_server_checkout" "test" {
 					resource.TestCheckResourceAttr("ghostwriter_static_server_checkout.test", "project_id", "1"),
 					resource.TestCheckResourceAttr("ghostwriter_static_server_checkout.test", "server_id", "1"),
 					resource.TestCheckResourceAttr("ghostwriter_static_server_checkout.test", "start_date", "2024-01-01"),
-					resource.TestCheckResourceAttr("ghostwriter_static_server_checkout.test", "end_date", "2025-01-01"),
+					resource.TestCheckResourceAttr("ghostwriter_static_server_checkout.test", "end_date", "2025-01-02"),
 					resource.TestCheckResourceAttr("ghostwriter_static_server_checkout.test", "activity_type_id", "1"),
 					resource.TestCheckResourceAttr("ghostwriter_static_server_checkout.test", "note", ""),
 					resource.TestCheckResourceAttr("ghostwriter_static_server_checkout.test", "server_role_id", "1"),

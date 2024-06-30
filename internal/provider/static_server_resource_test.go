@@ -16,7 +16,7 @@ func TestStaticServerResource(t *testing.T) {
 resource "ghostwriter_static_server" "test" {
   name = "hostname"
   server_provider_id = 1
-  ip_address = "192.168.0.1"
+  ip_address = "192.168.0.2"
   note = "Test Note"
 }
 `,
@@ -24,7 +24,7 @@ resource "ghostwriter_static_server" "test" {
 					resource.TestCheckResourceAttr("ghostwriter_static_server.test", "name", "hostname"),
 					resource.TestCheckResourceAttr("ghostwriter_static_server.test", "server_provider_id", "1"),
 					resource.TestCheckResourceAttr("ghostwriter_static_server.test", "server_status_id", "1"),
-					resource.TestCheckResourceAttr("ghostwriter_static_server.test", "ip_address", "192.168.0.1"),
+					resource.TestCheckResourceAttr("ghostwriter_static_server.test", "ip_address", "192.168.0.2"),
 					resource.TestCheckResourceAttr("ghostwriter_static_server.test", "note", "Test Note"),
 					resource.TestCheckResourceAttrSet("ghostwriter_static_server.test", "id"),
 					resource.TestCheckResourceAttrSet("ghostwriter_static_server.test", "last_updated"),
@@ -45,7 +45,7 @@ resource "ghostwriter_static_server" "test" {
 resource "ghostwriter_static_server" "test" {
   name = "New Hostname"
   server_provider_id = 1
-  ip_address = "192.168.0.2"
+  ip_address = "192.168.0.3"
   note = "Test updated note"
 }
 `,
@@ -53,7 +53,7 @@ resource "ghostwriter_static_server" "test" {
 					resource.TestCheckResourceAttr("ghostwriter_static_server.test", "name", "New Hostname"),
 					resource.TestCheckResourceAttr("ghostwriter_static_server.test", "server_provider_id", "1"),
 					resource.TestCheckResourceAttr("ghostwriter_static_server.test", "server_status_id", "1"),
-					resource.TestCheckResourceAttr("ghostwriter_static_server.test", "ip_address", "192.168.0.2"),
+					resource.TestCheckResourceAttr("ghostwriter_static_server.test", "ip_address", "192.168.0.3"),
 					resource.TestCheckResourceAttr("ghostwriter_static_server.test", "note", "Test updated note"),
 					resource.TestCheckResourceAttrSet("ghostwriter_static_server.test", "id"),
 					resource.TestCheckResourceAttrSet("ghostwriter_static_server.test", "last_updated"),

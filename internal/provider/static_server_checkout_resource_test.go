@@ -63,7 +63,7 @@ resource "ghostwriter_static_server_checkout" "test" {
 					resource.TestCheckResourceAttr("ghostwriter_static_server_checkout.test", "project_id", "1"),
 					resource.TestCheckResourceAttr("ghostwriter_static_server_checkout.test", "server_id", "1"),
 					resource.TestCheckResourceAttr("ghostwriter_static_server_checkout.test", "start_date", "2024-01-01"),
-					resource.TestCheckResourceAttr("ghostwriter_static_server_checkout.test", "end_date", "2025-01-02"),
+					resource.TestCheckResourceAttr("ghostwriter_static_server_checkout.test", "end_date", "2025-01-01"),
 					resource.TestCheckResourceAttr("ghostwriter_static_server_checkout.test", "activity_type_id", "1"),
 					resource.TestCheckResourceAttr("ghostwriter_static_server_checkout.test", "note", ""),
 					resource.TestCheckResourceAttr("ghostwriter_static_server_checkout.test", "server_role_id", "1"),

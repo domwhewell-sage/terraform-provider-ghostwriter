@@ -18,10 +18,9 @@ data "ghostwriter_project" "testproject" {
 }
 
 resource "ghostwriter_oplog" "test" {
-  name               = "Test Oplog"
-  project_id         = data.ghostwriter_project.testproject.id
-  mute_notifications = true
-  force_delete       = true
+  name         = "Test Oplog"
+  project_id   = data.ghostwriter_project.testproject.id
+  force_delete = true
 }
 ```
 
@@ -36,7 +35,6 @@ resource "ghostwriter_oplog" "test" {
 ### Optional
 
 - `force_delete` (Boolean) If false, will not be deleted from the ghostwriter instance when not managed by terraform. If true, the oplog will be hard-deleted from the ghostwriter instance. Default is false.
-- `mute_notifications` (Boolean) Notification status determines if Ghostwriter will send notifications for the log when the "Review Active Logs" task is run.
 
 ### Read-Only
 

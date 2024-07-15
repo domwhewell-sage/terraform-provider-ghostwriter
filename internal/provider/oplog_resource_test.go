@@ -26,7 +26,6 @@ resource "ghostwriter_oplog" "test" {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("ghostwriter_oplog.test", "name", "Test Oplog"),
 					resource.TestCheckResourceAttr("ghostwriter_oplog.test", "project_id", "1"),
-					resource.TestCheckResourceAttr("ghostwriter_oplog.test", "mute_notifications", "false"),
 					resource.TestCheckResourceAttr("ghostwriter_oplog.test", "force_delete", "true"),
 					resource.TestCheckResourceAttrSet("ghostwriter_oplog.test", "id"),
 					resource.TestCheckResourceAttrSet("ghostwriter_oplog.test", "last_updated"),
@@ -51,14 +50,12 @@ data "ghostwriter_project" "testproject" {
 resource "ghostwriter_oplog" "test" {
   name = "Test Updated Oplog"
   project_id = data.ghostwriter_project.testproject.id
-  mute_notifications = true
   force_delete = true
 }
 `,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("ghostwriter_oplog.test", "name", "Test Updated Oplog"),
 					resource.TestCheckResourceAttr("ghostwriter_oplog.test", "project_id", "1"),
-					resource.TestCheckResourceAttr("ghostwriter_oplog.test", "mute_notifications", "true"),
 					resource.TestCheckResourceAttr("ghostwriter_oplog.test", "force_delete", "true"),
 					resource.TestCheckResourceAttrSet("ghostwriter_oplog.test", "id"),
 					resource.TestCheckResourceAttrSet("ghostwriter_oplog.test", "last_updated"),

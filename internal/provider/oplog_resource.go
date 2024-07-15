@@ -36,12 +36,11 @@ type oplogResource struct {
 
 // orderResourceModel maps the resource schema data.
 type oplogResourceModel struct {
-	ID                types.Int64  `tfsdk:"id"`
-	Name              types.String `tfsdk:"name"`
-	ProjectID         types.Int64  `tfsdk:"project_id"`
-	MuteNotifications types.Bool   `tfsdk:"mute_notifications"`
-	ForceDelete       types.Bool   `tfsdk:"force_delete"`
-	LastUpdated       types.String `tfsdk:"last_updated"`
+	ID          types.Int64  `tfsdk:"id"`
+	Name        types.String `tfsdk:"name"`
+	ProjectID   types.Int64  `tfsdk:"project_id"`
+	ForceDelete types.Bool   `tfsdk:"force_delete"`
+	LastUpdated types.String `tfsdk:"last_updated"`
 }
 
 // Metadata returns the resource type name.
@@ -95,12 +94,6 @@ func (r *oplogResource) Schema(_ context.Context, _ resource.SchemaRequest, resp
 				Description: "The unique identifier of the project the oplog should be created for.",
 				Required:    true,
 			},
-			"mute_notifications": schema.BoolAttribute{
-				Description: "Notification status determines if Ghostwriter will send notifications for the log when the \"Review Active Logs\" task is run.",
-				Optional:    true,
-				Computed:    true,
-				Default:     booldefault.StaticBool(false),
-			},
 			"force_delete": schema.BoolAttribute{
 				Description: "If false, will not be deleted from the ghostwriter instance when not managed by terraform. If true, the oplog will be hard-deleted from the ghostwriter instance. Default is false.",
 				Optional:    true,
@@ -138,11 +131,10 @@ func (r *oplogResource) Create(ctx context.Context, req resource.CreateRequest, 
 	}
 
 	// Generate API request body from plan
-	const insertoplog = `mutation InsertOplog ($mute_notifications: Boolean, $name: String, $project_id: bigint){
-		insert_oplog(objects: {mute_notifications: $mute_notifications, name: $name, projectId: $project_id}) {
+	const insertoplog = `mutation InsertOplog ($name: String, $project_id: bigint){
+		insert_oplog(objects: {name: $name, projectId: $project_id}) {
 			returning {
 				id
-				mute_notifications
 				name
 				projectId
 			}
@@ -150,7 +142,6 @@ func (r *oplogResource) Create(ctx context.Context, req resource.CreateRequest, 
 	}`
 	tflog.Debug(ctx, fmt.Sprintf("Creating oplog: %v", plan))
 	request := graphql.NewRequest(insertoplog)
-	request.Var("mute_notifications", plan.MuteNotifications.ValueBool())
 	request.Var("name", plan.Name.ValueString())
 	request.Var("project_id", plan.ProjectID.ValueInt64())
 	var respData map[string]interface{}
@@ -169,7 +160,6 @@ func (r *oplogResource) Create(ctx context.Context, req resource.CreateRequest, 
 		plan.ID = types.Int64Value(int64(oplog["id"].(float64)))
 		plan.Name = types.StringValue(oplog["name"].(string))
 		plan.ProjectID = types.Int64Value(int64(oplog["projectId"].(float64)))
-		plan.MuteNotifications = types.BoolValue(oplog["mute_notifications"].(bool))
 		plan.LastUpdated = types.StringValue(time.Now().Format(time.RFC850))
 
 		// Set state to fully populated data
@@ -201,7 +191,6 @@ func (r *oplogResource) Read(ctx context.Context, req resource.ReadRequest, resp
 	const queryoplog = `query QueryOplog ($id: bigint){
 		oplog(where: {id: {_eq: $id}}) {
 			id
-			mute_notifications
 			name
 			projectId
 		}
@@ -226,7 +215,6 @@ func (r *oplogResource) Read(ctx context.Context, req resource.ReadRequest, resp
 		state.ID = types.Int64Value(int64(oplog["id"].(float64)))
 		state.Name = types.StringValue(oplog["name"].(string))
 		state.ProjectID = types.Int64Value(int64(oplog["projectId"].(float64)))
-		state.MuteNotifications = types.BoolValue(oplog["mute_notifications"].(bool))
 
 		// Set refreshed state
 		diags = resp.State.Set(ctx, &state)
@@ -257,11 +245,10 @@ func (r *oplogResource) Update(ctx context.Context, req resource.UpdateRequest, 
 	}
 
 	// Generate API request body from plan
-	const updateoplog = `mutation UpdateOplog ($id: bigint, $mute_notifications: Boolean, $name: String, $project_id: bigint){
-		update_oplog(where: {id: {_eq: $id}}, _set: {mute_notifications: $mute_notifications, name: $name, projectId: $project_id}) {
+	const updateoplog = `mutation UpdateOplog ($id: bigint, $name: String, $project_id: bigint){
+		update_oplog(where: {id: {_eq: $id}}, _set: {name: $name, projectId: $project_id}) {
 			returning {
 				id
-				mute_notifications
 				name
 				projectId
 			}
@@ -270,7 +257,6 @@ func (r *oplogResource) Update(ctx context.Context, req resource.UpdateRequest, 
 	tflog.Debug(ctx, fmt.Sprintf("Updating oplog: %v", plan))
 	request := graphql.NewRequest(updateoplog)
 	request.Var("id", state.ID.ValueInt64())
-	request.Var("mute_notifications", plan.MuteNotifications.ValueBool())
 	request.Var("name", plan.Name.ValueString())
 	request.Var("project_id", plan.ProjectID.ValueInt64())
 	var respData map[string]interface{}
@@ -289,7 +275,6 @@ func (r *oplogResource) Update(ctx context.Context, req resource.UpdateRequest, 
 		plan.ID = types.Int64Value(int64(oplog["id"].(float64)))
 		plan.Name = types.StringValue(oplog["name"].(string))
 		plan.ProjectID = types.Int64Value(int64(oplog["projectId"].(float64)))
-		plan.MuteNotifications = types.BoolValue(oplog["mute_notifications"].(bool))
 		plan.LastUpdated = types.StringValue(time.Now().Format(time.RFC850))
 
 		// Set state to fully populated data

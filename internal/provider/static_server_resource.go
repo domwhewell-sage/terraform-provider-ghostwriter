@@ -233,11 +233,10 @@ func (r *staticserverResource) Read(ctx context.Context, req resource.ReadReques
 	request.Var("id", state.ID.ValueInt64())
 	var respData map[string]interface{}
 	if err := r.client.Run(ctx, request, &respData); err != nil {
-		resp.Diagnostics.AddError(
-			"Error Reading Ghostwriter Server",
-			"Could not read Ghostwriter server ID "+strconv.FormatInt(state.ID.ValueInt64(), 10)+": "+err.Error(),
-		)
-		return
+		tflog.Debug(ctx, fmt.Sprintf("Could not read Ghostwriter server ID: %v", state.ID))
+		respData = map[string]interface{}{
+			"staticServer": []interface{}{},
+		}
 	}
 
 	// Overwrite items with refreshed state
@@ -256,10 +255,8 @@ func (r *staticserverResource) Read(ctx context.Context, req resource.ReadReques
 		// Set state to fully populated data
 		diags = resp.State.Set(ctx, &state)
 	} else {
-		resp.Diagnostics.AddError(
-			"Error creating server",
-			"Could not create server: Server not found",
-		)
+		resp.State.RemoveResource(ctx)
+		return
 	}
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -359,10 +356,6 @@ func (r *staticserverResource) Delete(ctx context.Context, req resource.DeleteRe
 	request.Var("id", state.ID.ValueInt64())
 	var respData map[string]interface{}
 	if err := r.client.Run(ctx, request, &respData); err != nil {
-		resp.Diagnostics.AddError(
-			"Error Deleting Ghostwriter Server",
-			"Could not delete server ID "+strconv.FormatInt(state.ID.ValueInt64(), 10)+": "+err.Error(),
-		)
 		return
 	}
 }

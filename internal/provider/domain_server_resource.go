@@ -290,11 +290,10 @@ func (r *domainserverResource) Read(ctx context.Context, req resource.ReadReques
 	request.Var("id", state.ID.ValueInt64())
 	var respData map[string]interface{}
 	if err := r.client.Run(ctx, request, &respData); err != nil {
-		resp.Diagnostics.AddError(
-			"Error Reading Ghostwriter Domain Server association",
-			"Could not read Ghostwriter domain server association ID "+strconv.FormatInt(state.ID.ValueInt64(), 10)+": "+err.Error(),
-		)
-		return
+		tflog.Debug(ctx, fmt.Sprintf("Could not read Ghostwriter domain server association ID: %v", state.ID))
+		respData = map[string]interface{}{
+			"domainServerConnection": []interface{}{},
+		}
 	}
 
 	// Overwrite items with refreshed state
@@ -323,10 +322,8 @@ func (r *domainserverResource) Read(ctx context.Context, req resource.ReadReques
 		// Set refreshed state
 		diags = resp.State.Set(ctx, &state)
 	} else {
-		resp.Diagnostics.AddError(
-			"Error Reading Ghostwriter domain server association",
-			"Could not read Ghostwriter domain server association ID "+strconv.FormatInt(state.ID.ValueInt64(), 10)+": Domain Server not found",
-		)
+		resp.State.RemoveResource(ctx)
+		return
 	}
 
 	resp.Diagnostics.Append(diags...)
@@ -465,10 +462,6 @@ func (r *domainserverResource) Delete(ctx context.Context, req resource.DeleteRe
 		request.Var("id", state.ID.ValueInt64())
 		var respData map[string]interface{}
 		if err := r.client.Run(ctx, request, &respData); err != nil {
-			resp.Diagnostics.AddError(
-				"Error Deleting Ghostwriter Domain Server association",
-				"Could not delete domain server association ID "+strconv.FormatInt(state.ID.ValueInt64(), 10)+": "+err.Error(),
-			)
 			return
 		}
 	} else {

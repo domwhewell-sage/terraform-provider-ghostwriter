@@ -285,11 +285,10 @@ func (r *staticserverCheckoutResource) Read(ctx context.Context, req resource.Re
 	request.Var("id", state.ID.ValueInt64())
 	var respData map[string]interface{}
 	if err := r.client.Run(ctx, request, &respData); err != nil {
-		resp.Diagnostics.AddError(
-			"Error Reading Ghostwriter Server Checkouts",
-			"Could not read Ghostwriter server checkout ID "+strconv.FormatInt(state.ID.ValueInt64(), 10)+": "+err.Error(),
-		)
-		return
+		tflog.Debug(ctx, fmt.Sprintf("Could not read Ghostwriter server checkout ID: %v", state.ID))
+		respData = map[string]interface{}{
+			"serverCheckout": []interface{}{},
+		}
 	}
 
 	tflog.Debug(ctx, fmt.Sprintf("Server checkout response: %v", respData))
@@ -309,10 +308,8 @@ func (r *staticserverCheckoutResource) Read(ctx context.Context, req resource.Re
 		// Set refreshed state
 		diags = resp.State.Set(ctx, &state)
 	} else {
-		resp.Diagnostics.AddError(
-			"Error Reading Ghostwriter Server Checkouts",
-			"Could not obtain any checkouts for the server ID "+strconv.FormatInt(state.ServerId.ValueInt64(), 10),
-		)
+		resp.State.RemoveResource(ctx)
+		return
 	}
 
 	resp.Diagnostics.Append(diags...)
@@ -424,10 +421,7 @@ func (r *staticserverCheckoutResource) Delete(ctx context.Context, req resource.
 		request.Var("id", state.ID.ValueInt64())
 		var respData map[string]interface{}
 		if err := r.client.Run(ctx, request, &respData); err != nil {
-			resp.Diagnostics.AddError(
-				"Error Deleting Ghostwriter Server Checkout",
-				"Could not delete server checkout ID "+strconv.FormatInt(state.ID.ValueInt64(), 10)+": "+err.Error(),
-			)
+			return
 		}
 	} else {
 		tflog.Info(ctx, "Cowardly refusing to delete server checkout. Releasing server to the ghostwriter pool and the server checkout record will remain. Set force_delete to true to delete server checkout record.")

@@ -200,11 +200,10 @@ func (r *oplogResource) Read(ctx context.Context, req resource.ReadRequest, resp
 	request.Var("id", state.ID.ValueInt64())
 	var respData map[string]interface{}
 	if err := r.client.Run(ctx, request, &respData); err != nil {
-		resp.Diagnostics.AddError(
-			"Error Reading Ghostwriter Oplog",
-			"Could not read Ghostwriter oplog ID "+strconv.FormatInt(state.ID.ValueInt64(), 10)+": "+err.Error(),
-		)
-		return
+		tflog.Debug(ctx, fmt.Sprintf("Could not read Ghostwriter oplog ID: %v", state.ID))
+		respData = map[string]interface{}{
+			"oplog": []interface{}{},
+		}
 	}
 
 	// Overwrite items with refreshed state
@@ -219,10 +218,8 @@ func (r *oplogResource) Read(ctx context.Context, req resource.ReadRequest, resp
 		// Set refreshed state
 		diags = resp.State.Set(ctx, &state)
 	} else {
-		resp.Diagnostics.AddError(
-			"Error Reading Ghostwriter Oplog",
-			"Could not read Ghostwriter oplog ID "+strconv.FormatInt(state.ID.ValueInt64(), 10)+": oplog not found",
-		)
+		resp.State.RemoveResource(ctx)
+		return
 	}
 
 	resp.Diagnostics.Append(diags...)
@@ -315,10 +312,6 @@ func (r *oplogResource) Delete(ctx context.Context, req resource.DeleteRequest, 
 		request.Var("id", state.ID.ValueInt64())
 		var respData map[string]interface{}
 		if err := r.client.Run(ctx, request, &respData); err != nil {
-			resp.Diagnostics.AddError(
-				"Error Deleting Ghostwriter Oplog",
-				"Could not delete oplog ID "+strconv.FormatInt(state.ID.ValueInt64(), 10)+": "+err.Error(),
-			)
 			return
 		}
 	} else {

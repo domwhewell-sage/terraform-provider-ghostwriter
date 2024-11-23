@@ -299,11 +299,10 @@ func (r *domainResource) Read(ctx context.Context, req resource.ReadRequest, res
 	request.Var("id", state.ID.ValueInt64())
 	var respData map[string]interface{}
 	if err := r.client.Run(ctx, request, &respData); err != nil {
-		resp.Diagnostics.AddError(
-			"Error Reading Ghostwriter Domain",
-			"Could not read Ghostwriter domain ID "+strconv.FormatInt(state.ID.ValueInt64(), 10)+": "+err.Error(),
-		)
-		return
+		tflog.Debug(ctx, fmt.Sprintf("Could not read Ghostwriter domain ID: %v", state.ID))
+		respData = map[string]interface{}{
+			"domain": []interface{}{},
+		}
 	}
 
 	// Overwrite items with refreshed state
@@ -324,10 +323,8 @@ func (r *domainResource) Read(ctx context.Context, req resource.ReadRequest, res
 		// Set refreshed state
 		diags = resp.State.Set(ctx, &state)
 	} else {
-		resp.Diagnostics.AddError(
-			"Error Reading Ghostwriter Domain",
-			"Could not read Ghostwriter domain ID "+strconv.FormatInt(state.ID.ValueInt64(), 10)+": Domain not found",
-		)
+		resp.State.RemoveResource(ctx)
+		return
 	}
 
 	resp.Diagnostics.Append(diags...)
@@ -437,10 +434,6 @@ func (r *domainResource) Delete(ctx context.Context, req resource.DeleteRequest,
 		request.Var("id", state.ID.ValueInt64())
 		var respData map[string]interface{}
 		if err := r.client.Run(ctx, request, &respData); err != nil {
-			resp.Diagnostics.AddError(
-				"Error Deleting Ghostwriter Domain",
-				"Could not delete domain ID "+strconv.FormatInt(state.ID.ValueInt64(), 10)+": "+err.Error(),
-			)
 			return
 		}
 	} else {

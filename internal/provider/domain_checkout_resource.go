@@ -276,11 +276,10 @@ func (r *domainCheckoutResource) Read(ctx context.Context, req resource.ReadRequ
 	request.Var("id", state.ID.ValueInt64())
 	var respData map[string]interface{}
 	if err := r.client.Run(ctx, request, &respData); err != nil {
-		resp.Diagnostics.AddError(
-			"Error Reading Ghostwriter Domain Checkouts",
-			"Could not read Ghostwriter domain checkout ID "+strconv.FormatInt(state.ID.ValueInt64(), 10)+": "+err.Error(),
-		)
-		return
+		tflog.Debug(ctx, fmt.Sprintf("Could not read Ghostwriter domain checkout ID: %v", state.ID))
+		respData = map[string]interface{}{
+			"domainCheckout": []interface{}{},
+		}
 	}
 
 	tflog.Debug(ctx, fmt.Sprintf("Domain checkout response: %v", respData))
@@ -299,10 +298,8 @@ func (r *domainCheckoutResource) Read(ctx context.Context, req resource.ReadRequ
 		// Set refreshed state
 		diags = resp.State.Set(ctx, &state)
 	} else {
-		resp.Diagnostics.AddError(
-			"Error Reading Ghostwriter Domain Checkouts",
-			"Could not obtain any checkouts for the domain ID "+strconv.FormatInt(state.DomainId.ValueInt64(), 10),
-		)
+		resp.State.RemoveResource(ctx)
+		return
 	}
 
 	resp.Diagnostics.Append(diags...)
@@ -411,10 +408,7 @@ func (r *domainCheckoutResource) Delete(ctx context.Context, req resource.Delete
 		request.Var("id", state.ID.ValueInt64())
 		var respData map[string]interface{}
 		if err := r.client.Run(ctx, request, &respData); err != nil {
-			resp.Diagnostics.AddError(
-				"Error Deleting Ghostwriter Domain Checkout",
-				"Could not delete domain checkout ID "+strconv.FormatInt(state.ID.ValueInt64(), 10)+": "+err.Error(),
-			)
+			return
 		}
 	} else {
 		tflog.Info(ctx, "Cowardly refusing to delete domain checkout. Releasing domain to the ghostwriter pool and the domain checkout record will remain. Set force_delete to true to delete domain checkout record.")

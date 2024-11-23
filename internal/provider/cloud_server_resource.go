@@ -283,11 +283,10 @@ func (r *cloudserverResource) Read(ctx context.Context, req resource.ReadRequest
 	request.Var("id", state.ID.ValueInt64())
 	var respData map[string]interface{}
 	if err := r.client.Run(ctx, request, &respData); err != nil {
-		resp.Diagnostics.AddError(
-			"Error Reading Ghostwriter Cloud Server",
-			"Could not read Ghostwriter cloud server ID "+strconv.FormatInt(state.ID.ValueInt64(), 10)+": "+err.Error(),
-		)
-		return
+		tflog.Debug(ctx, fmt.Sprintf("Could not read Ghostwriter cloud server ID : %v", state.ID))
+		respData = map[string]interface{}{
+			"cloudServer": []interface{}{},
+		}
 	}
 
 	// Overwrite items with refreshed state
@@ -315,10 +314,8 @@ func (r *cloudserverResource) Read(ctx context.Context, req resource.ReadRequest
 		// Set refreshed state
 		diags = resp.State.Set(ctx, &state)
 	} else {
-		resp.Diagnostics.AddError(
-			"Error Reading Ghostwriter cloud server",
-			"Could not read Ghostwriter cloud server ID "+strconv.FormatInt(state.ID.ValueInt64(), 10)+": Cloud Server not found",
-		)
+		resp.State.RemoveResource(ctx)
+		return
 	}
 
 	resp.Diagnostics.Append(diags...)
@@ -440,10 +437,6 @@ func (r *cloudserverResource) Delete(ctx context.Context, req resource.DeleteReq
 		request.Var("id", state.ID.ValueInt64())
 		var respData map[string]interface{}
 		if err := r.client.Run(ctx, request, &respData); err != nil {
-			resp.Diagnostics.AddError(
-				"Error Deleting Ghostwriter Cloud Server",
-				"Could not delete cloud server ID "+strconv.FormatInt(state.ID.ValueInt64(), 10)+": "+err.Error(),
-			)
 			return
 		}
 	} else {

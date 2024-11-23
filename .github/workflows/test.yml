@@ -137,4 +137,4 @@ jobs:
       if: always()
       working-directory: ./ghostwriter
       run: |
-        ./ghostwriter-cli-linux logs graphql --dev
+        ./ghostwriter-cli-linux logs graphql --dev >> $GITHUB_STEP_SUMMARY

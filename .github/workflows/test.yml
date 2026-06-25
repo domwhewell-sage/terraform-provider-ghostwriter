@@ -49,6 +49,10 @@ jobs:
         with:
           go-version-file: 'go.mod'
           cache: true
+      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
+        with:
+          terraform_version: 1.2.*
+          terraform_wrapper: false
       - run: go generate ./...
       - name: git diff
         run: |
@@ -101,8 +105,8 @@ jobs:
       working-directory: ./ghostwriter
       run: |
         chmod +x ghostwriter-cli-linux
-        ./ghostwriter-cli-linux install --dev
-        sleep 10
+        ./ghostwriter-cli-linux install --local-dev
+        sleep 20
     
     - name: Optain the ghostwriter API key
       id: gw_health
@@ -137,4 +141,4 @@ jobs:
       if: always()
       working-directory: ./ghostwriter
       run: |
-        ./ghostwriter-cli-linux logs graphql --dev >> $GITHUB_STEP_SUMMARY
+        ./ghostwriter-cli-linux logs graphql --local-dev >> $GITHUB_STEP_SUMMARY

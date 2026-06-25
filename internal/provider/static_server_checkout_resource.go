@@ -175,7 +175,7 @@ func (r *staticserverCheckoutResource) Create(ctx context.Context, req resource.
 
 	// Generate API request body from plan
 	const checkoutserver = `mutation checkoutServer ($activity_type_id: Int!, $server_id: Int!, $project_id: Int!, $note: String, $start_date: date!, $end_date: date!, $server_role_id: Int!) {
-		checkoutServer(activityTypeId: $activity_type_id, serverId: $server_id, projectId: $project_id, note: $note, startDate: $start_date, endDate: $end_date, serverRoleId: $server_role_id) {
+		checkoutServer(activityTypeId: $activity_type_id, serverId: $server_id, projectId: $project_id, description: $note, startDate: $start_date, endDate: $end_date, serverRoleId: $server_role_id) {
 			result
 		}
 	}`
@@ -205,7 +205,7 @@ func (r *staticserverCheckoutResource) Create(ctx context.Context, req resource.
 			id
 			serverId
 			endDate
-			note
+			note: description
 			projectId
 			startDate
 			activityType {
@@ -271,7 +271,7 @@ func (r *staticserverCheckoutResource) Read(ctx context.Context, req resource.Re
 			id
 			serverId
 			endDate
-			note
+			note: description
 			projectId
 			startDate
 			activityType {
@@ -333,12 +333,12 @@ func (r *staticserverCheckoutResource) Update(ctx context.Context, req resource.
 
 	// Generate API request body from plan
 	const updateservercheckout = `mutation UpdateServerCheckout ($id: bigint, $activity_type_id: bigint, $server_id: bigint, $project_id: bigint, $note: String, $start_date: date!, $end_date: date!, $server_role_id: bigint) {
-		update_serverCheckout(where: {id: {_eq: $id}}, _set: {activityTypeId: $activity_type_id, serverId: $server_id, endDate: $end_date, note: $note, projectId: $project_id, startDate: $start_date, serverRoleId: $server_role_id}) {
+		update_serverCheckout(where: {id: {_eq: $id}}, _set: {activityTypeId: $activity_type_id, serverId: $server_id, endDate: $end_date, description: $note, projectId: $project_id, startDate: $start_date, serverRoleId: $server_role_id}) {
 			returning {
 				id
 				serverId
 				endDate
-				note
+				note: description
 				projectId
 				startDate
 				activityType {

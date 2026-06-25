@@ -208,7 +208,7 @@ func (r *domainResource) Create(ctx context.Context, req resource.CreateRequest,
 
 	// Generate API request body from plan
 	const insertdomain = `mutation InsertDomain ($burned_explanation: String, $autoRenew: Boolean, $name: String, $registrar: String, $creation: date, $expiration: date, $note: String, $vtPermalink: String) {
-		insert_domain(objects: {burned_explanation: $burned_explanation, autoRenew: $autoRenew, name: $name, registrar: $registrar, creation: $creation, expiration: $expiration, note: $note, vtPermalink: $vtPermalink}) {
+		insert_domain(objects: {burned_explanation: $burned_explanation, autoRenew: $autoRenew, name: $name, registrar: $registrar, creation: $creation, expiration: $expiration, description: $note, vtPermalink: $vtPermalink}) {
 			returning {
 				id,
 				burned_explanation,
@@ -217,7 +217,7 @@ func (r *domainResource) Create(ctx context.Context, req resource.CreateRequest,
 				registrar,
 				creation,
 				expiration,
-				note,
+				note: description,
 				vtPermalink
 			}
 		}
@@ -290,7 +290,7 @@ func (r *domainResource) Read(ctx context.Context, req resource.ReadRequest, res
 			registrar,
 			creation,
 			expiration,
-			note,
+			note: description,
 			vtPermalink
 		}
 	}`
@@ -348,7 +348,7 @@ func (r *domainResource) Update(ctx context.Context, req resource.UpdateRequest,
 
 	// Generate API request body from plan
 	const updatedomain = `mutation UpdateDomain ($id: bigint, $burned_explanation: String, $autoRenew: Boolean, $name: String, $registrar: String, $creation: date, $expiration: date, $note: String, $vtPermalink: String) {
-		update_domain(where: {id: {_eq: $id}}, _set: {burned_explanation: $burned_explanation, autoRenew: $autoRenew, name: $name, registrar: $registrar, creation: $creation, expiration: $expiration, note: $note, vtPermalink: $vtPermalink}) {
+		update_domain(where: {id: {_eq: $id}}, _set: {burned_explanation: $burned_explanation, autoRenew: $autoRenew, name: $name, registrar: $registrar, creation: $creation, expiration: $expiration, description: $note, vtPermalink: $vtPermalink}) {
 			returning {
 				id,
 				burned_explanation,
@@ -357,7 +357,7 @@ func (r *domainResource) Update(ctx context.Context, req resource.UpdateRequest,
 				registrar,
 				creation,
 				expiration,
-				note,
+				note: description,
 				vtPermalink
 			}
 		}

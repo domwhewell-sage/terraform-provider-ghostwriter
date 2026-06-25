@@ -19,6 +19,7 @@ resource "ghostwriter_domain_checkout" "test" {
   start_date       = "2024-01-01"
   end_date         = "2025-01-01"
   activity_type_id = 1
+  note             = "initial test note"
   force_delete = true
 }
 `,
@@ -28,7 +29,7 @@ resource "ghostwriter_domain_checkout" "test" {
 					resource.TestCheckResourceAttr("ghostwriter_domain_checkout.test", "start_date", "2024-01-01"),
 					resource.TestCheckResourceAttr("ghostwriter_domain_checkout.test", "end_date", "2025-01-01"),
 					resource.TestCheckResourceAttr("ghostwriter_domain_checkout.test", "activity_type_id", "1"),
-					resource.TestCheckResourceAttr("ghostwriter_domain_checkout.test", "note", ""),
+					resource.TestCheckResourceAttr("ghostwriter_domain_checkout.test", "note", "initial test note"),
 					resource.TestCheckResourceAttr("ghostwriter_domain_checkout.test", "force_delete", "true"),
 					resource.TestCheckResourceAttrSet("ghostwriter_domain_checkout.test", "id"),
 					resource.TestCheckResourceAttrSet("ghostwriter_domain_checkout.test", "last_updated"),

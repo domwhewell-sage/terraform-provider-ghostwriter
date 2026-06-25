@@ -105,7 +105,7 @@ jobs:
       working-directory: ./ghostwriter
       run: |
         chmod +x ghostwriter-cli-linux
-        ./ghostwriter-cli-linux install --local-dev
+        ./ghostwriter-cli-linux install --mode local-dev
         sleep 20
     
     - name: Optain the ghostwriter API key
@@ -141,4 +141,4 @@ jobs:
       if: always()
       working-directory: ./ghostwriter
       run: |
-        ./ghostwriter-cli-linux logs graphql --local-dev >> $GITHUB_STEP_SUMMARY
+        ./ghostwriter-cli-linux logs graphql --mode local-dev >> $GITHUB_STEP_SUMMARY

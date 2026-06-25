@@ -180,7 +180,7 @@ func (r *cloudserverResource) Create(ctx context.Context, req resource.CreateReq
 
 	// Generate API request body from plan
 	const insertcloudserver = `mutation InsertCloudServer ($name: String, $server_provider_id: bigint, $activity_type_id: bigint, $ip: inet, $aux_address: [inet!], $project_id: bigint, $note: String, $server_role_id: bigint) {
-		insert_cloudServer(objects: {name: $name, serverProviderId: $server_provider_id, activityTypeId: $activity_type_id, ipAddress: $ip, auxAddress: $aux_address, projectId: $project_id, note: $note, serverRoleId: $server_role_id}) {
+		insert_cloudServer(objects: {name: $name, serverProviderId: $server_provider_id, activityTypeId: $activity_type_id, ipAddress: $ip, auxAddress: $aux_address, projectId: $project_id, description: $note, serverRoleId: $server_role_id}) {
 			returning {
 				id,
 				name,
@@ -189,7 +189,7 @@ func (r *cloudserverResource) Create(ctx context.Context, req resource.CreateReq
 				ipAddress,
 				auxAddress,
 				projectId,
-				note,
+				note: description,
 				serverRoleId
 			}
 		}
@@ -274,7 +274,7 @@ func (r *cloudserverResource) Read(ctx context.Context, req resource.ReadRequest
 			ipAddress,
 			auxAddress,
 			projectId,
-			note,
+			note: description,
 			serverRoleId
 		}
 	}`
@@ -339,7 +339,7 @@ func (r *cloudserverResource) Update(ctx context.Context, req resource.UpdateReq
 
 	// Generate API request body from plan
 	const updatecloudserver = `mutation UpdateCloudServer ($id: bigint, $name: String, $server_provider_id: bigint, $activity_type_id: bigint, $ip: inet, $aux_address: [inet!], $project_id: bigint, $note: String, $server_role_id: bigint) {
-		update_cloudServer(where: {id: {_eq: $id}}, _set: {name: $name, serverProviderId: $server_provider_id, activityTypeId: $activity_type_id, ipAddress: $ip, auxAddress: $aux_address, projectId: $project_id, note: $note, serverRoleId: $server_role_id}) {
+		update_cloudServer(where: {id: {_eq: $id}}, _set: {name: $name, serverProviderId: $server_provider_id, activityTypeId: $activity_type_id, ipAddress: $ip, auxAddress: $aux_address, projectId: $project_id, description: $note, serverRoleId: $server_role_id}) {
 			returning {
 				id,
 				name,
@@ -348,7 +348,7 @@ func (r *cloudserverResource) Update(ctx context.Context, req resource.UpdateReq
 				ipAddress,
 				auxAddress,
 				projectId,
-				note,
+				note: description,
 				serverRoleId
 			}
 		}

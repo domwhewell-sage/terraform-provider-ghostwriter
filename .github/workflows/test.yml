@@ -112,8 +112,8 @@ jobs:
       working-directory: ./ghostwriter
       run: |
         ./ghostwriter-cli-linux config set hasura_graphql_enable_console true
-        ./ghostwriter-cli-linux containers down
-        ./ghostwriter-cli-linux containers up
+        ./ghostwriter-cli-linux containers down --mode local-dev
+        ./ghostwriter-cli-linux containers up --mode local-dev
     
     - name: Obtain the ghostwriter API key
       id: gw_health
@@ -148,4 +148,4 @@ jobs:
       if: always()
       working-directory: ./ghostwriter
       run: |
-        ./ghostwriter-cli-linux logs graphql >> $GITHUB_STEP_SUMMARY
+        ./ghostwriter-cli-linux logs graphql --mode local-dev >> $GITHUB_STEP_SUMMARY

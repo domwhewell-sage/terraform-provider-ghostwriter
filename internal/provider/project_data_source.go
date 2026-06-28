@@ -157,7 +157,7 @@ func (d *projectDataSource) Read(ctx context.Context, req datasource.ReadRequest
 			endDate
 			endTime
 			timezone
-			note
+			note: description
 			slackChannel
 		}
 	}`

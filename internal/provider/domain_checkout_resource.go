@@ -170,7 +170,7 @@ func (r *domainCheckoutResource) Create(ctx context.Context, req resource.Create
 
 	// Generate API request body from plan
 	const checkoutdomain = `mutation checkoutDomain ($activity_type_id: Int!, $domain_id: Int!, $project_id: Int!, $note: String, $start_date: date!, $end_date: date!) {
-		checkoutDomain(activityTypeId: $activity_type_id, domainId: $domain_id, projectId: $project_id, note: $note, startDate: $start_date, endDate: $end_date) {
+		checkoutDomain(activityTypeId: $activity_type_id, domainId: $domain_id, projectId: $project_id, description: $note, startDate: $start_date, endDate: $end_date) {
 			result
 		}
 	}`
@@ -199,7 +199,7 @@ func (r *domainCheckoutResource) Create(ctx context.Context, req resource.Create
 			id
 			domainId
 			endDate
-			note
+			note: description
 			projectId
 			startDate
 			activityType {
@@ -263,7 +263,7 @@ func (r *domainCheckoutResource) Read(ctx context.Context, req resource.ReadRequ
 			id
 			domainId
 			endDate
-			note
+			note: description
 			projectId
 			startDate
 			activityType {
@@ -323,12 +323,12 @@ func (r *domainCheckoutResource) Update(ctx context.Context, req resource.Update
 
 	// Generate API request body from plan
 	const updatedomaincheckout = `mutation UpdateDomainCheckout ($id: bigint, $activity_type_id: bigint, $domain_id: bigint, $project_id: bigint, $note: String, $start_date: date!, $end_date: date!) {
-		update_domainCheckout(where: {id: {_eq: $id}}, _set: {activityTypeId: $activity_type_id, domainId: $domain_id, endDate: $end_date, note: $note, projectId: $project_id, startDate: $start_date}) {
+		update_domainCheckout(where: {id: {_eq: $id}}, _set: {activityTypeId: $activity_type_id, domainId: $domain_id, endDate: $end_date, description: $note, projectId: $project_id, startDate: $start_date}) {
 			returning {
 				id
 				domainId
 				endDate
-				note
+				note: description
 				projectId
 				startDate
 				activityType {

@@ -49,6 +49,10 @@ jobs:
         with:
           go-version-file: 'go.mod'
           cache: true
+      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
+        with:
+          terraform_version: 1.2.*
+          terraform_wrapper: false
       - run: go generate ./...
       - name: git diff
         run: |
@@ -101,24 +105,46 @@ jobs:
       working-directory: ./ghostwriter
       run: |
         chmod +x ghostwriter-cli-linux
-        ./ghostwriter-cli-linux install --dev
+        ./ghostwriter-cli-linux install --mode local-dev
         sleep 10
     
-    - name: Optain the ghostwriter API key
+    - name: Start the hasura console
+      working-directory: ./ghostwriter
+      run: |
+        ./ghostwriter-cli-linux config set hasura_graphql_enable_console true
+        ./ghostwriter-cli-linux containers down --mode local-dev
+        ./ghostwriter-cli-linux containers up --mode local-dev
+        sleep 10
+    
+    - name: Obtain the ghostwriter API key
       id: gw_health
       working-directory: ./ghostwriter
       run: |
         export GHOSTWRITER_USERNAME="admin"
         export GHOSTWRITER_PASSWORD=$(./ghostwriter-cli-linux config get ADMIN_PASSWORD | grep ADMIN_PASSWORD | awk '{print $2}')
-        echo GHOSTWRITER_API_KEY=$(curl -X POST -H "Content-Type: application/json" -d '{"query": "mutation Login { login(password: \"'$GHOSTWRITER_PASSWORD'\", username: \"'$GHOSTWRITER_USERNAME'\") { token expires } }"}' http://localhost:8080/v1/graphql | jq -r .data.login.token) >> $GITHUB_ENV
+        GHOSTWRITER_API_KEY=""
+        for i in $(seq 1 30); do
+          GHOSTWRITER_API_KEY=$(curl -s -X POST -H "Content-Type: application/json" -d '{"query": "mutation login { login(password: \"'$GHOSTWRITER_PASSWORD'\", username: \"'$GHOSTWRITER_USERNAME'\") { token expires } }"}' http://localhost:8080/v1/graphql | jq -r '.data.login.token // empty')
+          if [ -n "$GHOSTWRITER_API_KEY" ] && [ "$GHOSTWRITER_API_KEY" != "null" ]; then
+            echo "Successfully obtained Ghostwriter API key on attempt $i"
+            break
+          fi
+          echo "Attempt $i: Ghostwriter API not ready yet, retrying in 5 seconds..."
+          sleep 5
+        done
+        if [ -z "$GHOSTWRITER_API_KEY" ] || [ "$GHOSTWRITER_API_KEY" = "null" ]; then
+          echo "Failed to obtain Ghostwriter API key after 30 attempts"
+          exit 1
+        fi
+        echo GHOSTWRITER_API_KEY=$GHOSTWRITER_API_KEY >> $GITHUB_ENV
     
     - name: Create some test data
       working-directory: ./ghostwriter
       run: |
-        export GHOSTWRITER_CLIENT_ID=$(curl -X POST -H "Content-Type: application/json" -H "Authorization: Bearer $GHOSTWRITER_API_KEY" -d '{"query": "mutation InsertClient { insert_client(objects: {name: \"TestClient\", shortName: \"TC\", codename: \"tc\", note: \"Test Note\", address: \"Test Address\"}) { returning { id } } }"}' http://localhost:8080/v1/graphql | jq -r .data.insert_client.returning[0].id)
-        curl -X POST -H "Content-Type: application/json" -H "Authorization: Bearer $GHOSTWRITER_API_KEY" -d '{"query": "mutation InsertProject { insert_project(objects: {clientId: \"'$GHOSTWRITER_CLIENT_ID'\", codename: \"TestProject\", endDate: \"2025-01-01\", startDate: \"2024-01-01\", note: \"Test Note\", slackChannel: \"#test\", projectTypeId: \"1\"}) { returning { id } } }"}' http://localhost:8080/v1/graphql
-        curl -X POST -H "Content-Type: application/json" -H "Authorization: Bearer $GHOSTWRITER_API_KEY" -d '{"query": "mutation InsertDomain { insert_domain(objects: {burned_explanation: \"\", autoRenew: false, name: \"example.com\", registrar: \"Route 53\", creation: \"2024-01-01\", expiration: \"2025-01-01\", note: \"Test Note\", vtPermalink: \"\"}) { returning { id, burned_explanation, autoRenew, name, registrar, creation, expiration, note, vtPermalink} } }"}' http://localhost:8080/v1/graphql
-        curl -X POST -H "Content-Type: application/json" -H "Authorization: Bearer $GHOSTWRITER_API_KEY" -d '{"query": "mutation InsertServer { insert_staticServer(objects: {name: \"TestServer\", serverProviderId: 1, serverStatusId: 1, ipAddress: \"192.168.0.1\", note: \"Test Note\"}) { returning { id, name, serverProviderId, serverStatusId, ipAddress, note } } }"}' http://localhost:8080/v1/graphql
+        export GHOSTWRITER_CLIENT_ID=$(curl -X POST -H "Content-Type: application/json" -H "Authorization: Bearer $GHOSTWRITER_API_KEY" -d '{"query": "mutation InsertClient { insert_client(objects: {name: \"TestClient\", shortName: \"TC\", codename: \"tc\", description: \"Test Note\", address: \"Test Address\"}) { returning { id } } }"}' http://localhost:8080/v1/graphql | jq -r .data.insert_client.returning[0].id)
+        curl -X POST -H "Content-Type: application/json" -H "Authorization: Bearer $GHOSTWRITER_API_KEY" -d '{"query": "mutation InsertProject { insert_project(objects: {clientId: \"'$GHOSTWRITER_CLIENT_ID'\", codename: \"TestProject\", endDate: \"2025-01-01\", startDate: \"2024-01-01\", description: \"Test Note\", slackChannel: \"#test\", projectTypeId: \"1\"}) { returning { id } } }"}' http://localhost:8080/v1/graphql
+        curl -X POST -H "Content-Type: application/json" -H "Authorization: Bearer $GHOSTWRITER_API_KEY" -d '{"query": "mutation InsertDomain { insert_domain(objects: {burned_explanation: \"\", autoRenew: false, name: \"example.com\", registrar: \"Route 53\", creation: \"2024-01-01\", expiration: \"2025-01-01\", description: \"Test Note\", vtPermalink: \"\"}) { returning { id, burned_explanation, autoRenew, name, registrar, creation, expiration, note, vtPermalink} } }"}' http://localhost:8080/v1/graphql
+        curl -X POST -H "Content-Type: application/json" -H "Authorization: Bearer $GHOSTWRITER_API_KEY" -d '{"query": "mutation InsertServer { insert_staticServer(objects: {name: \"TestServer\", serverProviderId: 1, serverStatusId: 1, ipAddress: \"192.168.0.1\", description: \"Test Note\"}) { returning { id, name, serverProviderId, serverStatusId, ipAddress, note } } }"}' http://localhost:8080/v1/graphql
         
     - name: TF acceptance tests
       timeout-minutes: 10
@@ -137,4 +163,4 @@ jobs:
       if: always()
       working-directory: ./ghostwriter
       run: |
-        ./ghostwriter-cli-linux logs graphql --dev >> $GITHUB_STEP_SUMMARY
+        ./ghostwriter-cli-linux logs graphql --mode local-dev >> $GITHUB_STEP_SUMMARY

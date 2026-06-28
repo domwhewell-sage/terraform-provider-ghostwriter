@@ -95,25 +95,19 @@ jobs:
       run: |
         go mod download
     
-    - name: Checkout the ghostwriter application
-      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      with:
-        repository: GhostManager/Ghostwriter
-        path: ghostwriter
-    
-    - name: Install the ghostwriter application
-      working-directory: ./ghostwriter
+    - name: Download and install the ghostwriter cli binary
       run: |
-        chmod +x ghostwriter-cli-linux
-        ./ghostwriter-cli-linux install
-        sleep 30
+        wget https://github.com/GhostManager/ghostwriter_cli/releases/latest/download/ghostwriter-cli-linux-amd64.tar.gz
+        tar -xvzf ghostwriter-cli-linux-amd64.tar.gz
+        ./ghostwriter-cli install --version v6.2.2
+        sleep 20
     
     - name: Obtain the ghostwriter API key
       id: gw_health
       working-directory: ./ghostwriter
       run: |
         export GHOSTWRITER_USERNAME="admin"
-        export GHOSTWRITER_PASSWORD=$(./ghostwriter-cli-linux config get ADMIN_PASSWORD | grep ADMIN_PASSWORD | awk '{print $2}')
+        export GHOSTWRITER_PASSWORD=$(./ghostwriter-cli config get ADMIN_PASSWORD | grep ADMIN_PASSWORD | awk '{print $2}')
         echo GHOSTWRITER_API_KEY=$(curl -k -X POST -H "Content-Type: application/json" -d '{"query": "mutation login { login(password: \"'$GHOSTWRITER_PASSWORD'\", username: \"'$GHOSTWRITER_USERNAME'\") { token expires } }"}' https://localhost/v1/graphql | jq -r .data.login.token) >> $GITHUB_ENV
     
     - name: Create some test data
@@ -141,4 +135,4 @@ jobs:
       if: always()
       working-directory: ./ghostwriter
       run: |
-        ./ghostwriter-cli-linux logs graphql >> $GITHUB_STEP_SUMMARY
+        ./ghostwriter-cli logs graphql >> $GITHUB_STEP_SUMMARY

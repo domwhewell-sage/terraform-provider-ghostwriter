@@ -108,13 +108,13 @@ jobs:
         ./ghostwriter-cli-linux install
         sleep 20
     
-    - name: Optain the ghostwriter API key
+    - name: Obtain the ghostwriter API key
       id: gw_health
       working-directory: ./ghostwriter
       run: |
         export GHOSTWRITER_USERNAME="admin"
         export GHOSTWRITER_PASSWORD=$(./ghostwriter-cli-linux config get ADMIN_PASSWORD | grep ADMIN_PASSWORD | awk '{print $2}')
-        echo GHOSTWRITER_API_KEY=$(curl -k -X POST -H "Content-Type: application/json" -d '{"query": "mutation Login { login(password: \"'$GHOSTWRITER_PASSWORD'\", username: \"'$GHOSTWRITER_USERNAME'\") { token expires } }"}' https://localhost/v1/graphql | jq -r .data.login.token) >> $GITHUB_ENV
+        echo GHOSTWRITER_API_KEY=$(curl -k -X POST -H "Content-Type: application/json" -d '{"query": "mutation login { login(password: \"'$GHOSTWRITER_PASSWORD'\", username: \"'$GHOSTWRITER_USERNAME'\") { token expires } }"}' https://localhost/v1/graphql | jq -r .data.login.token) >> $GITHUB_ENV
     
     - name: Create some test data
       working-directory: ./ghostwriter

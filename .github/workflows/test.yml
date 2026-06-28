@@ -95,27 +95,36 @@ jobs:
       run: |
         go mod download
     
-    - name: Download and install the ghostwriter cli binary
+    - name: Checkout the ghostwriter application
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      with:
+        repository: GhostManager/Ghostwriter
+        path: ghostwriter
+    
+    - name: Install the ghostwriter application
+      working-directory: ./ghostwriter
       run: |
-        wget https://github.com/GhostManager/ghostwriter_cli/releases/latest/download/ghostwriter-cli-linux-amd64.tar.gz
-        tar -xvzf ghostwriter-cli-linux-amd64.tar.gz
-        ./ghostwriter-cli install --version v6.2.2
+        chmod +x ghostwriter-cli-linux
+        ./ghostwriter-cli-linux install --mode local-dev
         sleep 20
     
     - name: Start the hasura console
+      working-directory: ./ghostwriter
       run: |
-        ./ghostwriter-cli config set hasura_graphql_enable_console true
-        ./ghostwriter-cli containers down
-        ./ghostwriter-cli containers up
+        ./ghostwriter-cli-linux config set hasura_graphql_enable_console true
+        ./ghostwriter-cli-linux containers down
+        ./ghostwriter-cli-linux containers up
     
     - name: Obtain the ghostwriter API key
       id: gw_health
+      working-directory: ./ghostwriter
       run: |
         export GHOSTWRITER_USERNAME="admin"
-        export GHOSTWRITER_PASSWORD=$(./ghostwriter-cli config get ADMIN_PASSWORD | grep ADMIN_PASSWORD | awk '{print $2}')
+        export GHOSTWRITER_PASSWORD=$(./ghostwriter-cli-linux config get ADMIN_PASSWORD | grep ADMIN_PASSWORD | awk '{print $2}')
         echo GHOSTWRITER_API_KEY=$(curl -k -X POST -H "Content-Type: application/json" -d '{"query": "mutation login { login(password: \"'$GHOSTWRITER_PASSWORD'\", username: \"'$GHOSTWRITER_USERNAME'\") { token expires } }"}' https://localhost/v1/graphql | jq -r .data.login.token) >> $GITHUB_ENV
     
     - name: Create some test data
+      working-directory: ./ghostwriter
       run: |
         export GHOSTWRITER_CLIENT_ID=$(curl -k -X POST -H "Content-Type: application/json" -H "Authorization: Bearer $GHOSTWRITER_API_KEY" -d '{"query": "mutation InsertClient { insert_client(objects: {name: \"TestClient\", shortName: \"TC\", codename: \"tc\", description: \"Test Note\", address: \"Test Address\"}) { returning { id } } }"}' https://localhost/v1/graphql | jq -r .data.insert_client.returning[0].id)
         curl -k -X POST -H "Content-Type: application/json" -H "Authorization: Bearer $GHOSTWRITER_API_KEY" -d '{"query": "mutation InsertProject { insert_project(objects: {clientId: \"'$GHOSTWRITER_CLIENT_ID'\", codename: \"TestProject\", endDate: \"2025-01-01\", startDate: \"2024-01-01\", description: \"Test Note\", slackChannel: \"#test\", projectTypeId: \"1\"}) { returning { id } } }"}' https://localhost/v1/graphql
@@ -137,5 +146,6 @@ jobs:
     
     - name: Gather ghostwriter logs
       if: always()
+      working-directory: ./ghostwriter
       run: |
-        ./ghostwriter-cli logs graphql >> $GITHUB_STEP_SUMMARY
+        ./ghostwriter-cli-linux logs graphql >> $GITHUB_STEP_SUMMARY

@@ -106,7 +106,7 @@ jobs:
       run: |
         chmod +x ghostwriter-cli-linux
         ./ghostwriter-cli-linux install --mode local-dev
-        sleep 20
+        sleep 10
     
     - name: Start the hasura console
       working-directory: ./ghostwriter
@@ -114,6 +114,7 @@ jobs:
         ./ghostwriter-cli-linux config set hasura_graphql_enable_console true
         ./ghostwriter-cli-linux containers down --mode local-dev
         ./ghostwriter-cli-linux containers up --mode local-dev
+        sleep 10
     
     - name: Obtain the ghostwriter API key
       id: gw_health

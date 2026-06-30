@@ -12,8 +12,7 @@ const (
 	// such as updating the Makefile and running the testing through that tool.
 	providerConfig = `
 provider "ghostwriter" {
-  endpoint = "https://localhost/v1/graphql"
-  tls_insecure = true
+  endpoint = "http://localhost:8080/v1/graphql"
 }
 `
 )

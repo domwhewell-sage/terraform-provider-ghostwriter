@@ -106,7 +106,12 @@ jobs:
       run: |
         chmod +x ghostwriter-cli-linux
         ./ghostwriter-cli-linux install --mode local-dev
-        sleep 10
+
+    - name: Wait for services and reload Hasura metadata
+      working-directory: ./ghostwriter
+      run: |
+        docker compose -f local.yml up -d --wait --wait-timeout 300 postgres redis frontend django
+        docker compose -f local.yml up -d --force-recreate --wait --wait-timeout 300 graphql_engine
     
     - name: Obtain the ghostwriter API key
       id: gw_health

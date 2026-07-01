@@ -17,6 +17,7 @@ resource "ghostwriter_domain" "test" {
   name = "test.com"
   creation = "2024-01-01"
   expiration = "2025-01-01"
+  note = "initial test note"
   force_delete = true
 }
 `,
@@ -26,7 +27,7 @@ resource "ghostwriter_domain" "test" {
 					resource.TestCheckResourceAttr("ghostwriter_domain.test", "creation", "2024-01-01"),
 					resource.TestCheckResourceAttr("ghostwriter_domain.test", "expiration", "2025-01-01"),
 					resource.TestCheckResourceAttr("ghostwriter_domain.test", "auto_renew", "false"),
-					resource.TestCheckResourceAttr("ghostwriter_domain.test", "note", ""),
+					resource.TestCheckResourceAttr("ghostwriter_domain.test", "note", "initial test note"),
 					resource.TestCheckResourceAttr("ghostwriter_domain.test", "burned_explanation", ""),
 					resource.TestCheckResourceAttr("ghostwriter_domain.test", "vt_permalink", ""),
 					resource.TestCheckResourceAttr("ghostwriter_domain.test", "force_delete", "true"),

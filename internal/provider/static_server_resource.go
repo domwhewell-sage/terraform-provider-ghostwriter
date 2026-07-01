@@ -153,14 +153,14 @@ func (r *staticserverResource) Create(ctx context.Context, req resource.CreateRe
 
 	// Generate API request body from plan
 	const insertserver = `mutation InsertServer($name: String, $server_provider_id: bigint, $server_status_id: bigint, $ip: inet, $note: String) {
-		insert_staticServer(objects: {name: $name, serverProviderId: $server_provider_id, serverStatusId: $server_status_id, ipAddress: $ip, note: $note}) {
+		insert_staticServer(objects: {name: $name, serverProviderId: $server_provider_id, serverStatusId: $server_status_id, ipAddress: $ip, description: $note}) {
 			returning {
 				id,
 				name,
 				serverProviderId,
 				serverStatusId,
 				ipAddress,
-				note
+				note: description
 			}
 		}
 	}`
@@ -225,7 +225,7 @@ func (r *staticserverResource) Read(ctx context.Context, req resource.ReadReques
 			serverProviderId,
 			serverStatusId,
 			ipAddress,
-			note
+			note: description
 		}
 	}`
 	tflog.Debug(ctx, fmt.Sprintf("Reading server: %v", state.ID))
@@ -279,14 +279,14 @@ func (r *staticserverResource) Update(ctx context.Context, req resource.UpdateRe
 
 	// Generate API request body from plan
 	const updateserver = `mutation UpdateServer($id: bigint, $name: String, $server_provider_id: bigint, $server_status_id: bigint, $ip: inet, $note: String) {
-		update_staticServer(where: {id: {_eq: $id}}, _set: {name: $name, serverProviderId: $server_provider_id, serverStatusId: $server_status_id, ipAddress: $ip, note: $note}) {
+		update_staticServer(where: {id: {_eq: $id}}, _set: {name: $name, serverProviderId: $server_provider_id, serverStatusId: $server_status_id, ipAddress: $ip, description: $note}) {
 			returning {
 				id,
 				name,
 				serverProviderId,
 				serverStatusId,
 				ipAddress,
-				note
+				note: description
 			}
 		}
 	}`
